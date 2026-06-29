@@ -13,7 +13,7 @@ param(
     [string] $TaskId = "",
     [string] $TaskTitle = "",
     [string] $TaskStatus = "",
-    [int] $TaskOrder = 0,
+    [int] $TaskOrder = -1,
     [string] $LiveDirectory = ".sdlc/live",
     [switch] $Pretty
 )
@@ -320,7 +320,7 @@ function New-AiSdlcTaskSnapshot {
         $first = $taskEvents | Select-Object -First 1
         $latest = $taskEvents | Select-Object -Last 1
         $latestTitle = @($taskEvents | Where-Object { $_.taskTitle } | Select-Object -Last 1)
-        $latestOrder = @($taskEvents | Where-Object { $_.taskOrder -and $_.taskOrder -gt 0 } | Select-Object -Last 1)
+        $latestOrder = @($taskEvents | Where-Object { $null -ne $_.taskOrder -and [int]$_.taskOrder -ge 0 } | Select-Object -Last 1)
         $roles = New-AiSdlcRoleSnapshot -RoleFlow $RoleFlow -Events $taskEvents
         $artifacts = [System.Collections.Generic.List[string]]::new()
         foreach ($taskEvent in $taskEvents) {
@@ -350,7 +350,7 @@ function New-AiSdlcTaskSnapshot {
         })
     }
 
-    return @($tasks | Sort-Object @{ Expression = "order"; Ascending = $true }, @{ Expression = "startedAtUtc"; Ascending = $true })
+    return @($tasks | Sort-Object @{ Expression = { [int]$_.order }; Ascending = $true }, @{ Expression = { [string]$_.startedAtUtc }; Ascending = $true })
 }
 
 function New-DashboardHtml {
