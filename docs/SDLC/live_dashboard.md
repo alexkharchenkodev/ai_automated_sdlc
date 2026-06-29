@@ -32,8 +32,8 @@ Events can belong to a batch and task:
 
 The dashboard groups events by `taskId`. The `Tasks` tab shows the queue,
 current task, planned work, completed work, blocked work, task-scoped role flow,
-task events, and task artifacts. The `Events` tab shows collapsible task groups
-instead of one flat stream.
+task events, task artifacts, and reopen history. The `Events` tab shows
+collapsible task groups instead of one flat stream.
 
 If an agent does not provide task metadata, `write-role-event.ps1` keeps backward
 compatibility by assigning the event to `task-local`.
@@ -134,6 +134,34 @@ Task statuses use the same operational vocabulary plus queue-level values:
 - `blocked`
 - `failed`
 - `skipped`
+
+## Reopen / Revision Loops
+
+Reopen events are first-class events. Use them when one role sends a task back
+to an earlier role or implementation phase because of a missing requirement,
+architecture gap, UX conflict, failed review, or failed validation.
+
+Common examples:
+
+- architecture reopens BA because the task misses existing constraints
+- UX reopens BA/design because the requested flow conflicts with established UX
+- code review reopens engineering because the implementation has defects
+- test execution reopens engineering because validation failed
+
+Emit a reopen event with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\write-role-event.ps1 -RunId "run-20260629-120000" -BatchId "batch-20260629-001" -TaskId "task-003" -TaskTitle "Add button action" -TaskOrder 3 -EventType reopen -Role code_review -Status revision_requested -TaskStatus running -ReopenToRole engineering -ReopenReason "Button action bypasses the existing command handler." -ReopenSeverity blocked -Message "Code review returned the task to engineering." -Pretty
+```
+
+The task snapshot stores:
+
+- `reopenCount`
+- `lastReopenReason`
+- `reopenHistory[]` with `fromRole`, `toRole`, `reason`, `severity`, and time
+
+The dashboard shows reopen counts in the work queue, a `Reopen History` panel on
+the selected task, and inline reopen reasons inside event timelines.
 
 ## Agent Usage
 

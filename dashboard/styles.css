@@ -377,7 +377,8 @@ pre {
 .findings-panel,
 .provider-list,
 .source-list,
-.task-queue {
+.task-queue,
+.reopen-list {
   display: grid;
   gap: 10px;
 }
@@ -389,7 +390,8 @@ pre {
 .provider-item,
 .source-item,
 .task-row,
-.event-group {
+.event-group,
+.reopen-item {
   padding: 12px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
@@ -497,6 +499,23 @@ pre {
   padding: 0 12px 12px;
 }
 
+.reopen-item {
+  border-color: rgba(244, 183, 77, .34);
+}
+
+.reopen-item.severity-blocked,
+.reopen-item.severity-critical {
+  border-color: rgba(255, 107, 102, .48);
+  background: rgba(255, 107, 102, .06);
+}
+
+.reopen-inline {
+  margin-top: 8px;
+  color: var(--warn);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .timeline-item {
   display: grid;
   grid-template-columns: 170px 130px minmax(0, 1fr);
@@ -562,7 +581,8 @@ pre {
 
 .badge.status-running,
 .badge.status-selected,
-.badge.status-in_progress {
+.badge.status-in_progress,
+.badge.status-info {
   background: rgba(90, 167, 255, .14);
   color: var(--run);
 }
@@ -581,6 +601,8 @@ pre {
 .badge.status-skipped,
 .badge.status-planned,
 .badge.status-system,
+.badge.status-reopened,
+.badge.status-revision_requested,
 .badge.status-review,
 .badge.status-review_required,
 .badge.status-unknown,
@@ -598,6 +620,7 @@ pre {
 
 .badge.status-blocked,
 .badge.status-failed,
+.badge.status-critical,
 .badge.status-missing {
   background: rgba(255, 107, 102, .15);
   color: var(--bad);

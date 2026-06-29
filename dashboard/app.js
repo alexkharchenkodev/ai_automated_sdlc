@@ -94,6 +94,17 @@
         decision: latest.status || "review",
         eventCount: items.length,
         artifactCount: artifacts.length,
+        reopenCount: items.filter((event) => event.eventType === "reopen" || event.status === "reopened" || event.status === "revision_requested").length,
+        reopenHistory: items
+          .filter((event) => event.eventType === "reopen" || event.status === "reopened" || event.status === "revision_requested")
+          .map((event) => ({
+            timeUtc: event.timeUtc || "",
+            fromRole: (event.reopen && event.reopen.fromRole) || event.role || "",
+            toRole: (event.reopen && event.reopen.toRole) || "",
+            severity: (event.reopen && event.reopen.severity) || "warning",
+            reason: (event.reopen && event.reopen.reason) || event.message || "",
+            message: event.message || ""
+          })),
         startedAtUtc: (items[0] || {}).timeUtc || "",
         updatedAtUtc: latest.timeUtc || "",
         latestMessage: latest.message || "",
@@ -285,7 +296,7 @@
             ${badge(task.status || "unknown")}
           </span>
           <span class="task-row-meta">
-            ${escapeHtml(task.activeRole || "-")} / ${escapeHtml(task.eventCount || 0)} events / ${escapeHtml(task.artifactCount || 0)} artifacts
+            ${escapeHtml(task.activeRole || "-")} / ${escapeHtml(task.eventCount || 0)} events / ${escapeHtml(task.artifactCount || 0)} artifacts${task.reopenCount ? ` / ${escapeHtml(task.reopenCount)} reopens` : ""}
           </span>
           <span class="task-row-message">${escapeHtml(task.latestMessage || "Waiting for task activity.")}</span>
         </button>
@@ -300,6 +311,8 @@
       byId("selectedTaskRoleGraph").innerHTML = `<p class="muted">No task selected.</p>`;
       byId("selectedTaskEvents").innerHTML = `<p class="muted">No task selected.</p>`;
       byId("selectedTaskArtifacts").innerHTML = `<p class="muted">No task selected.</p>`;
+      byId("selectedTaskReopenCount").textContent = "0 reopens";
+      byId("selectedTaskReopens").innerHTML = `<p class="muted">No task selected.</p>`;
       return;
     }
 
@@ -311,6 +324,7 @@
       metric("Task ID", selectedTask.taskId),
       metric("Batch", selectedTask.batchId || "-"),
       metric("Active role", selectedTask.activeRole || "-"),
+      metric("Reopens", selectedTask.reopenCount || 0),
       metric("Updated", compactTime(selectedTask.updatedAtUtc))
     ].join("");
     byId("selectedTaskRoleCount").textContent = `${(selectedTask.roles || []).length} roles`;
@@ -320,13 +334,28 @@
       <article class="timeline-item">
         <span class="muted-label">${escapeHtml(compactTime(event.timeUtc))}</span>
         <span>${escapeHtml(event.role)} ${badge(event.status)}</span>
-        <div><p>${escapeHtml(event.message)}</p></div>
+        <div>
+          <p>${escapeHtml(event.message)}</p>
+          ${event.eventType === "reopen" && event.reopen ? `<p class="reopen-inline">${escapeHtml(event.reopen.fromRole || event.role)} -> ${escapeHtml(event.reopen.toRole || "-")}: ${escapeHtml(event.reopen.reason || "")}</p>` : ""}
+        </div>
       </article>
     `).join("") || `<p class="muted">No events for this task.</p>`;
     byId("selectedTaskArtifactCount").textContent = `${(selectedTask.artifacts || []).length} artifacts`;
     byId("selectedTaskArtifacts").innerHTML = (selectedTask.artifacts || []).map((artifact) => `
       <article class="artifact-item"><p><code>${escapeHtml(artifact)}</code></p></article>
     `).join("") || `<p class="muted">No artifacts for this task.</p>`;
+    const reopens = Array.isArray(selectedTask.reopenHistory) ? selectedTask.reopenHistory : [];
+    byId("selectedTaskReopenCount").textContent = `${reopens.length} reopens`;
+    byId("selectedTaskReopens").innerHTML = reopens.slice().reverse().map((item) => `
+      <article class="reopen-item severity-${safeClass(item.severity)}">
+        <div class="panel-header compact">
+          <strong>${escapeHtml(item.fromRole || "-")} -> ${escapeHtml(item.toRole || "-")}</strong>
+          ${badge(item.severity || "warning")}
+        </div>
+        <p>${escapeHtml(item.reason || item.message || "No reason recorded.")}</p>
+        <span class="muted-label">${escapeHtml(compactTime(item.timeUtc))}</span>
+      </article>
+    `).join("") || `<p class="muted">No reopen loops for this task.</p>`;
   };
 
   const getMemoryProvider = (contextMemory, memoryContent, name) => {
@@ -429,6 +458,7 @@
                 <span>${escapeHtml(event.role)} ${badge(event.status)}</span>
                 <div>
                   <p>${escapeHtml(event.message)}</p>
+                  ${event.eventType === "reopen" && event.reopen ? `<p class="reopen-inline">${escapeHtml(event.reopen.fromRole || event.role)} -> ${escapeHtml(event.reopen.toRole || "-")}: ${escapeHtml(event.reopen.reason || "")}</p>` : ""}
                   ${(event.artifacts || []).length ? `<p><code>${escapeHtml((event.artifacts || []).join(", "))}</code></p>` : ""}
                 </div>
               </article>

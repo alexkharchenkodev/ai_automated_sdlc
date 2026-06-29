@@ -251,7 +251,10 @@ powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\write-role-eve
 ```
 
 The dashboard shows task totals, active task, planned/running/completed/blocked
-work, task-scoped role flow, task artifacts, and collapsible event groups.
+work, task-scoped role flow, task artifacts, reopen history, and collapsible
+event groups. Use `-EventType reopen -ReopenToRole <role> -ReopenReason <text>`
+when BA, architecture, UX, code review, or validation sends a task back for
+revision.
 
 ## Configure Context, Memory, Tokens, And Integrations
 

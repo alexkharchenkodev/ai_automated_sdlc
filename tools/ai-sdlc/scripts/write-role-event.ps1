@@ -5,10 +5,16 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $Role,
     [Parameter(Mandatory = $true)]
-    [ValidateSet("pending", "running", "completed", "skipped", "blocked", "failed", "waiting")]
+    [ValidateSet("pending", "running", "completed", "skipped", "blocked", "failed", "waiting", "reopened", "revision_requested")]
     [string] $Status,
     [string] $Message = "",
     [string[]] $Artifact = @(),
+    [ValidateSet("role_progress", "reopen")]
+    [string] $EventType = "role_progress",
+    [string] $ReopenToRole = "",
+    [string] $ReopenReason = "",
+    [ValidateSet("info", "warning", "blocked", "critical")]
+    [string] $ReopenSeverity = "warning",
     [string] $BatchId = "",
     [string] $TaskId = "",
     [string] $TaskTitle = "",
@@ -297,11 +303,31 @@ function Get-AiSdlcTaskStatus {
 
     if (@($Roles | Where-Object { $_.status -eq "failed" }).Count -gt 0) { return "failed" }
     if (@($Roles | Where-Object { $_.status -eq "blocked" }).Count -gt 0) { return "blocked" }
+    if (@($Roles | Where-Object { $_.status -eq "reopened" -or $_.status -eq "revision_requested" }).Count -gt 0) { return "running" }
     if (@($Roles | Where-Object { $_.status -eq "running" }).Count -gt 0) { return "running" }
     if (@($Roles | Where-Object { $_.status -eq "waiting" }).Count -gt 0) { return "waiting" }
     if (@($Roles | Where-Object { $_.id -eq "done" -and $_.status -eq "completed" }).Count -gt 0) { return "completed" }
     if (@($Roles | Where-Object { $_.status -eq "completed" }).Count -gt 0) { return "running" }
     return "planned"
+}
+
+function Get-AiSdlcReopenHistory {
+    param([object[]] $Events)
+
+    $history = [System.Collections.Generic.List[object]]::new()
+    foreach ($event in @($Events | Where-Object { $_.eventType -eq "reopen" -or $_.status -eq "reopened" -or $_.status -eq "revision_requested" })) {
+        $reopen = $event.reopen
+        $history.Add([ordered]@{
+            timeUtc = $event.timeUtc
+            fromRole = if ($reopen -and $reopen.fromRole) { $reopen.fromRole } else { $event.role }
+            toRole = if ($reopen -and $reopen.toRole) { $reopen.toRole } else { "" }
+            severity = if ($reopen -and $reopen.severity) { $reopen.severity } else { "warning" }
+            reason = if ($reopen -and $reopen.reason) { $reopen.reason } else { $event.message }
+            message = $event.message
+        })
+    }
+
+    return @($history)
 }
 
 function New-AiSdlcTaskSnapshot {
@@ -322,6 +348,8 @@ function New-AiSdlcTaskSnapshot {
         $latestTitle = @($taskEvents | Where-Object { $_.taskTitle } | Select-Object -Last 1)
         $latestOrder = @($taskEvents | Where-Object { $null -ne $_.taskOrder -and [int]$_.taskOrder -ge 0 } | Select-Object -Last 1)
         $roles = New-AiSdlcRoleSnapshot -RoleFlow $RoleFlow -Events $taskEvents
+        $reopenHistory = Get-AiSdlcReopenHistory -Events $taskEvents
+        $latestReopen = @($reopenHistory | Select-Object -Last 1)
         $artifacts = [System.Collections.Generic.List[string]]::new()
         foreach ($taskEvent in $taskEvents) {
             foreach ($artifact in @($taskEvent.artifacts)) {
@@ -338,10 +366,13 @@ function New-AiSdlcTaskSnapshot {
             title = if ($latestTitle) { [string]$latestTitle.taskTitle } elseif ($first.message) { [string]$first.message } else { if ($group.Name) { $group.Name } else { "Local task" } }
             order = if ($latestOrder) { [int]$latestOrder.taskOrder } else { $index }
             status = $status
-            activeRole = Get-AiSdlcActiveRole -Roles $roles -FallbackRole ([string]$latest.role)
+            activeRole = if ($latest.eventType -eq "reopen" -and $latest.reopen -and $latest.reopen.toRole) { [string]$latest.reopen.toRole } else { Get-AiSdlcActiveRole -Roles $roles -FallbackRole ([string]$latest.role) }
             decision = Get-AiSdlcDecision -Roles $roles
             eventCount = $taskEvents.Count
             artifactCount = $artifacts.Count
+            reopenCount = @($reopenHistory).Count
+            lastReopenReason = if ($latestReopen) { [string]$latestReopen.reason } else { "" }
+            reopenHistory = @($reopenHistory)
             startedAtUtc = if ($first) { $first.timeUtc } else { "" }
             updatedAtUtc = if ($latest) { $latest.timeUtc } else { "" }
             latestMessage = if ($latest) { $latest.message } else { "" }
@@ -480,6 +511,9 @@ if (-not $TaskTitle) {
     $TaskTitle = if ($Role -eq "system") { "System events" } elseif ($Message) { $Message } else { "Local task" }
 }
 $taskVisible = -not ($Role -eq "system" -and -not $taskIdProvided)
+if ($EventType -eq "reopen" -and -not $ReopenReason) {
+    $ReopenReason = $Message
+}
 
 $eventsPath = Join-Path $liveRoot "events.jsonl"
 $statePath = Join-Path $liveRoot "state.json"
@@ -506,6 +540,17 @@ $event = [ordered]@{
     status = $Status
     message = $Message
     artifacts = @($Artifact)
+    eventType = $EventType
+    reopen = if ($EventType -eq "reopen") {
+        [ordered]@{
+            fromRole = $Role
+            toRole = $ReopenToRole
+            reason = $ReopenReason
+            severity = $ReopenSeverity
+        }
+    } else {
+        $null
+    }
     batchId = $BatchId
     taskId = $TaskId
     taskTitle = $TaskTitle
@@ -545,6 +590,7 @@ $taskSummary = [ordered]@{
     blocked = @($tasks | Where-Object { $_.status -eq "blocked" }).Count
     failed = @($tasks | Where-Object { $_.status -eq "failed" }).Count
     skipped = @($tasks | Where-Object { $_.status -eq "skipped" }).Count
+    reopens = (@($tasks | ForEach-Object { if ($_.reopenCount) { [int]$_.reopenCount } else { 0 } }) | Measure-Object -Sum).Sum
 }
 
 $state = [ordered]@{
