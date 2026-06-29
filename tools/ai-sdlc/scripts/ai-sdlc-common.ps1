@@ -245,12 +245,27 @@ function Read-AiSdlcProfile {
 
     $rootPath = Resolve-AiSdlcRoot -Root $Root
     $profilePath = if ($ConfigPath) { $ConfigPath } else { Join-Path $rootPath "tools/ai-sdlc/config/project-profile.yaml" }
-    $text = Read-SdlcText -Path $profilePath
+    $profileIsExample = $false
+    $profileMissing = $false
+
+    if (-not (Test-Path -LiteralPath $profilePath)) {
+        $examplePath = Join-Path $rootPath "tools/ai-sdlc/config/project-profile.example.yaml"
+        if (Test-Path -LiteralPath $examplePath) {
+            $profilePath = $examplePath
+            $profileIsExample = $true
+        } else {
+            $profileMissing = $true
+        }
+    }
+
+    $text = if ($profileMissing) { "" } else { Read-SdlcText -Path $profilePath }
     $lines = $text -split "`r?`n"
 
     return [ordered]@{
         path = $profilePath
-        projectName = Get-YamlScalar -Lines $lines -Key "project_name" -Default "UnknownProject"
+        isExample = $profileIsExample
+        missing = $profileMissing
+        projectName = Get-YamlScalar -Lines $lines -Key "project_name" -Default ([System.IO.Path]::GetFileName($rootPath))
         profileName = Get-YamlScalar -Lines $lines -Key "profile_name" -Default "generic"
         primaryStack = Get-YamlScalar -Lines $lines -Key "primary_stack" -Default "generic"
         projectRoot = Get-YamlScalar -Lines $lines -Key "project_root" -Default "."

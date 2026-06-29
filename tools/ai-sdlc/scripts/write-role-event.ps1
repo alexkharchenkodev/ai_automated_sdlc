@@ -47,6 +47,181 @@ function Read-DashboardConfigFile {
     }
 }
 
+function Test-AiSdlcPathUnderRoot {
+    param(
+        [string] $RootPath,
+        [string] $CandidatePath
+    )
+
+    if (-not $CandidatePath) { return $false }
+    $rootFull = [System.IO.Path]::GetFullPath($RootPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    $candidateFull = [System.IO.Path]::GetFullPath($CandidatePath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    return ($candidateFull -eq $rootFull -or $candidateFull.StartsWith($rootFull + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase))
+}
+
+function Read-AiSdlcTextPreview {
+    param(
+        [string] $Path,
+        [int] $MaxChars
+    )
+
+    $reader = $null
+    try {
+        $reader = [System.IO.StreamReader]::new($Path, [System.Text.Encoding]::UTF8, $true)
+        $buffer = New-Object char[] ($MaxChars + 1)
+        $read = $reader.Read($buffer, 0, $buffer.Length)
+        if ($read -le 0) {
+            return [pscustomobject]@{ content = ""; truncated = $false }
+        }
+
+        $take = [Math]::Min($read, $MaxChars)
+        $content = -join $buffer[0..($take - 1)]
+        return [pscustomobject]@{
+            content = $content
+            truncated = ($read -gt $MaxChars)
+        }
+    } finally {
+        if ($reader) { $reader.Dispose() }
+    }
+}
+
+function Get-AiSdlcMemoryPreviewFiles {
+    param(
+        [string] $DirectoryPath,
+        [int] $MaxFiles
+    )
+
+    $allowedExtensions = @(".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".xml", ".cs", ".ts", ".tsx", ".js", ".jsx", ".html", ".css", ".scss", ".py", ".swift", ".kt", ".java", ".go", ".rs", ".sql")
+    $excludedSegments = @("\.git\", "\node_modules\", "\bin\", "\obj\", "\.sdlc\live\", "\.sdlc\tmp\")
+    return @(Get-ChildItem -LiteralPath $DirectoryPath -File -Recurse -ErrorAction SilentlyContinue |
+        Where-Object {
+            $path = $_.FullName
+            $allowedExtensions -contains $_.Extension.ToLowerInvariant() -and
+            -not ($excludedSegments | Where-Object { $path.IndexOf($_, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 })
+        } |
+        Sort-Object FullName |
+        Select-Object -First $MaxFiles)
+}
+
+function Read-AiSdlcMemorySourcePreview {
+    param(
+        [string] $RootPath,
+        [object] $Source,
+        [int] $MaxCharsPerSource,
+        [int] $MaxFilesPerDirectory
+    )
+
+    $sourcePath = [string]$Source.path
+    $resolvedPath = [string]$Source.resolvedPath
+    $status = [string]$Source.status
+
+    $base = [ordered]@{
+        path = $sourcePath
+        resolvedPath = $resolvedPath
+        status = $status
+        type = "unavailable"
+        sizeBytes = 0
+        truncated = $false
+        content = ""
+    }
+
+    if ($status -ne "available" -or -not $resolvedPath -or -not (Test-Path -LiteralPath $resolvedPath)) {
+        return [pscustomobject]$base
+    }
+
+    if (-not (Test-AiSdlcPathUnderRoot -RootPath $RootPath -CandidatePath $resolvedPath)) {
+        $base["status"] = "outside_project_root"
+        return [pscustomobject]$base
+    }
+
+    $item = Get-Item -LiteralPath $resolvedPath -ErrorAction SilentlyContinue
+    if (-not $item) {
+        $base["status"] = "missing"
+        return [pscustomobject]$base
+    }
+
+    if ($item.PSIsContainer) {
+        $base["type"] = "directory"
+        $files = Get-AiSdlcMemoryPreviewFiles -DirectoryPath $resolvedPath -MaxFiles $MaxFilesPerDirectory
+        $lines = [System.Collections.Generic.List[string]]::new()
+        $lines.Add("Directory preview: $sourcePath")
+        $lines.Add("Included files: $($files.Count)")
+        $lines.Add("")
+        $usedChars = 0
+        $sizeBytes = 0
+        $truncated = $false
+
+        foreach ($file in $files) {
+            $relative = $file.FullName.Substring(([System.IO.Path]::GetFullPath($RootPath)).Length).TrimStart("\", "/")
+            $remaining = $MaxCharsPerSource - $usedChars
+            if ($remaining -le 0) {
+                $truncated = $true
+                break
+            }
+
+            $perFileLimit = [Math]::Min(1800, $remaining)
+            $snippet = Read-AiSdlcTextPreview -Path $file.FullName -MaxChars $perFileLimit
+            $entry = @"
+--- $relative
+$($snippet.content)
+"@
+            $lines.Add($entry.TrimEnd())
+            $lines.Add("")
+            $usedChars += $entry.Length
+            $sizeBytes += $file.Length
+            if ($snippet.truncated) { $truncated = $true }
+        }
+
+        $base["sizeBytes"] = $sizeBytes
+        $base["truncated"] = $truncated
+        $base["content"] = ($lines -join [Environment]::NewLine).TrimEnd()
+        return [pscustomobject]$base
+    }
+
+    $base["type"] = "file"
+    $preview = Read-AiSdlcTextPreview -Path $resolvedPath -MaxChars $MaxCharsPerSource
+    $base["sizeBytes"] = $item.Length
+    $base["truncated"] = $preview.truncated
+    $base["content"] = $preview.content
+    return [pscustomobject]$base
+}
+
+function Read-AiSdlcMemoryContent {
+    param(
+        [string] $RootPath,
+        [object] $ContextMemory,
+        [int] $MaxCharsPerSource = 12000,
+        [int] $MaxFilesPerDirectory = 24
+    )
+
+    if ($null -eq $ContextMemory -or -not $ContextMemory.providers) {
+        return $null
+    }
+
+    $providerPreviews = [System.Collections.Generic.List[object]]::new()
+    foreach ($provider in @($ContextMemory.providers)) {
+        $sourcePreviews = [System.Collections.Generic.List[object]]::new()
+        foreach ($source in @($provider.sources)) {
+            $sourcePreviews.Add((Read-AiSdlcMemorySourcePreview -RootPath $RootPath -Source $source -MaxCharsPerSource $MaxCharsPerSource -MaxFilesPerDirectory $MaxFilesPerDirectory))
+        }
+
+        $providerPreviews.Add([ordered]@{
+            name = $provider.name
+            enabled = $provider.enabled
+            mode = $provider.mode
+            sources = @($sourcePreviews)
+        })
+    }
+
+    return [ordered]@{
+        schemaVersion = 1
+        generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
+        maxCharsPerSource = $MaxCharsPerSource
+        maxFilesPerDirectory = $MaxFilesPerDirectory
+        providers = @($providerPreviews)
+    }
+}
+
 function New-DashboardHtml {
     param(
         [object] $State,
@@ -267,6 +442,7 @@ $compliance = if (Test-Path -LiteralPath $compliancePath) { Get-Content -Literal
 $contextMemory = if (Test-Path -LiteralPath $contextPath) { Get-Content -LiteralPath $contextPath -Raw | ConvertFrom-Json } else { $null }
 $integrations = if (Test-Path -LiteralPath $integrationsPath) { Get-Content -LiteralPath $integrationsPath -Raw | ConvertFrom-Json } else { $null }
 $tokenUsage = if (Test-Path -LiteralPath $tokenPath) { Get-Content -LiteralPath $tokenPath -Raw | ConvertFrom-Json } else { $null }
+$memoryContent = Read-AiSdlcMemoryContent -RootPath $rootPath -ContextMemory $contextMemory
 $dashboardConfigFiles = @(
     "tools/ai-sdlc/config/project-profile.yaml",
     "tools/ai-sdlc/config/context_memory.yaml",
@@ -291,6 +467,7 @@ $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_LANE" -Value $lan
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_SAFETY" -Value $safeChange))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_COMPLIANCE" -Value $compliance))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_CONTEXT_MEMORY" -Value $contextMemory))
+$runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_MEMORY_CONTENT" -Value $memoryContent))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_INTEGRATIONS" -Value $integrations))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_TOKEN_USAGE" -Value $tokenUsage))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_CONFIG" -Value $dashboardConfig))

@@ -1,7 +1,7 @@
 # Live Role Dashboard
 
 The portable AI SDLC dashboard visualizes which role is active, what it is doing, which execution lane is selected, whether compliance passed, and which artifacts have been produced.
-It also exposes a `Config` modal and a `Project Memory` section for ADR, RAG, GraphRAG, and code-search readiness.
+It also exposes a `Config` modal and a `Project Memory` tab for ADR, RAG, GraphRAG, and code-search readiness.
 
 ## Files
 
@@ -10,14 +10,31 @@ Runtime files are generated under `.sdlc/live/`:
 - `events.jsonl`: append-only role event log
 - `state.json`: latest role state
 - `dashboard/index.html`: local dashboard shell
-- `dashboard/runtime-state.js`: browser-readable snapshot of state, events, profile, summary, lane, compliance, safety, context memory, integrations, and token report
-- `dashboard/app.js`: local UI for role flow, config summary, project memory, artifacts, event logs, and async state polling
+- `dashboard/runtime-state.js`: browser-readable snapshot of state, events, profile, summary, lane, compliance, safety, context memory, memory previews, integrations, and token report
+- `dashboard/app.js`: local UI for the role graph, config summary, project memory, artifacts, event logs, and async state polling
 
 These are generated evidence files. Do not copy them from another project.
 
 The dashboard does not reload the full page on each update. It polls `runtime-state.js`
 every three seconds and updates the rendered sections in place, so selected text,
 the active Project Memory tab, and open modal state are preserved during live runs.
+
+## Project Memory Preview
+
+The `Memory` tab reads the context-memory report and shows configured ADR, RAG,
+GraphRAG, code-search, or integration sources. If a provider is disabled or a
+source is unavailable, the dashboard explains why the content cannot be shown.
+
+For local files and directories, `write-role-event.ps1` emits a bounded preview
+into `AI_SDLC_MEMORY_CONTENT` inside `dashboard/runtime-state.js`:
+
+- file sources include the first characters of the file
+- directory sources include a limited set of text-like files and short snippets
+- generated live output, `.git`, build folders, and dependency folders are skipped
+- previews stay inside the project root
+
+This is for visibility only. The framework still expects real RAG, GraphRAG, or
+issue-tracker indexing to be supplied by the configured project/tooling.
 
 ## Start Dashboard
 

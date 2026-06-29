@@ -7,171 +7,155 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div>
-      <h1>AI SDLC Dashboard</h1>
-      <p class="subtitle">Live role flow, safety gates, validation, and evidence state.</p>
-    </div>
-    <div class="top-actions">
-      <button id="configButton" class="icon-button" type="button">Config</button>
-      <span id="decisionBadge" class="badge">loading</span>
-      <span class="muted">Live update: 3s</span>
-    </div>
-  </header>
-
-  <main>
-    <section class="summary-grid">
-      <article class="summary-card">
-        <span class="label">Run</span>
-        <strong id="runId">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="label">Active Role</span>
-        <strong id="activeRole">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="label">Project</span>
-        <strong id="projectName">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="label">Updated</span>
-        <strong id="updatedAt">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="label">Lane</span>
-        <strong id="laneName">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="label">Compliance</span>
-        <strong id="complianceDecision">-</strong>
-      </article>
-      <article class="summary-card">
-        <span class="label">Doctor</span>
-        <strong id="doctorDecision">-</strong>
-      </article>
-    </section>
-
-    <section>
-      <div class="section-title">
-        <h2>Framework Config</h2>
-        <span id="frameworkStatus" class="muted">Loading</span>
-      </div>
-      <div class="four-column">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand-block">
+        <div class="brand-mark">AI</div>
         <div>
-          <div class="section-title compact">
-            <h3>Doctor</h3>
-            <span id="doctorPanelDecision" class="muted">No report</span>
-          </div>
-          <div id="doctorPanel" class="panel"></div>
-        </div>
-        <div>
-          <div class="section-title compact">
-            <h3>Execution Lane</h3>
-            <span id="laneDecision" class="muted">No report</span>
-          </div>
-          <div id="lanePanel" class="panel"></div>
-        </div>
-        <div>
-          <div class="section-title compact">
-            <h3>Compliance</h3>
-            <span id="compliancePanelDecision" class="muted">No report</span>
-          </div>
-          <div id="compliancePanel" class="panel"></div>
-        </div>
-        <div>
-          <div class="section-title compact">
-            <h3>Token Budget</h3>
-            <span id="tokenDecision" class="muted">No report</span>
-          </div>
-          <div id="tokenPanel" class="panel"></div>
+          <h1>SDLC</h1>
+          <p>Automation cockpit</p>
         </div>
       </div>
-      <div class="two-column secondary-config">
-        <div>
-          <div class="section-title compact">
-            <h3>Context Memory</h3>
-            <span id="contextDecision" class="muted">No report</span>
-          </div>
-          <div id="contextPanel" class="panel"></div>
-        </div>
-        <div>
-          <div class="section-title compact">
-            <h3>Integrations</h3>
-            <span id="integrationsDecision" class="muted">No report</span>
-          </div>
-          <div id="integrationsPanel" class="panel"></div>
-        </div>
-      </div>
-    </section>
 
-    <section>
-      <div class="section-title">
-        <h2>Project Memory</h2>
-        <span id="memoryStatus" class="muted">Loading</span>
-      </div>
-      <div class="tabs" role="tablist" aria-label="Project memory providers">
-        <button class="tab-button active" type="button" data-memory-tab="adr">ADR</button>
-        <button class="tab-button" type="button" data-memory-tab="rag">RAG</button>
-        <button class="tab-button" type="button" data-memory-tab="graph_rag">GraphRAG</button>
-        <button class="tab-button" type="button" data-memory-tab="code_search">Code Search</button>
-      </div>
-      <div id="memoryPanel" class="panel memory-panel"></div>
-    </section>
+      <nav class="side-nav" aria-label="Dashboard sections">
+        <button class="nav-item active" type="button" data-app-tab="overview">Overview</button>
+        <button class="nav-item" type="button" data-app-tab="evidence">Evidence</button>
+        <button class="nav-item" type="button" data-app-tab="memory">Memory</button>
+        <button class="nav-item" type="button" data-app-tab="events">Events</button>
+      </nav>
 
-    <section>
-      <div class="section-title">
-        <h2>Roles</h2>
-        <span id="roleCount" class="muted">0 roles</span>
+      <div class="sidebar-footer">
+        <span class="muted-label">Live update</span>
+        <strong>3s polling</strong>
       </div>
-      <div id="roles" class="role-grid"></div>
-    </section>
+    </aside>
 
-    <section class="two-column">
-      <div>
-        <div class="section-title">
-          <h2>Safety</h2>
-          <span id="safetyDecision" class="muted">No safety report loaded</span>
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Current Run</p>
+          <h2 id="projectName">Unknown project</h2>
+          <p class="subtitle"><span id="runId">-</span> · updated <span id="updatedAt">-</span></p>
         </div>
-        <div id="safetyPanel" class="panel"></div>
-      </div>
-      <div>
-        <div class="section-title">
-          <h2>Artifacts</h2>
-          <span id="artifactCount" class="muted">0 artifacts</span>
+        <div class="top-actions">
+          <span id="decisionBadge" class="badge">loading</span>
+          <button id="configButton" class="icon-button" type="button">Config</button>
         </div>
-        <div id="artifactPanel" class="panel"></div>
-      </div>
-    </section>
+      </header>
 
-    <section>
-      <div class="section-title">
-        <h2>Events</h2>
-        <span id="eventCount" class="muted">0 events</span>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Time UTC</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Message</th>
-              <th>Artifacts</th>
-            </tr>
-          </thead>
-          <tbody id="events"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+      <section class="status-strip" aria-label="Run status">
+        <article>
+          <span>Active role</span>
+          <strong id="activeRole">-</strong>
+        </article>
+        <article>
+          <span>Lane</span>
+          <strong id="laneName">-</strong>
+        </article>
+        <article>
+          <span>Compliance</span>
+          <strong id="complianceDecision">-</strong>
+        </article>
+        <article>
+          <span>Doctor</span>
+          <strong id="doctorDecision">-</strong>
+        </article>
+      </section>
+
+      <section class="tab-panel active" data-tab-panel="overview">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Role Flow</p>
+            <h3>Execution graph</h3>
+          </div>
+          <span id="roleCount" class="muted-label">0 roles</span>
+        </div>
+        <div id="roleGraph" class="role-graph"></div>
+
+        <div class="overview-grid">
+          <section class="surface">
+            <div class="panel-header compact">
+              <h3>Gate Health</h3>
+              <span id="frameworkStatus" class="muted-label">Loading</span>
+            </div>
+            <div id="gateGrid" class="gate-grid"></div>
+          </section>
+
+          <section class="surface">
+            <div class="panel-header compact">
+              <h3>Recent Activity</h3>
+              <span id="eventCount">0 events</span>
+            </div>
+            <div id="liveFeed" class="activity-feed"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="evidence">
+        <div class="split-layout">
+          <section class="surface">
+            <div class="panel-header compact">
+              <h3>Artifacts</h3>
+              <span id="artifactCount" class="muted-label">0 artifacts</span>
+            </div>
+            <div id="artifactList" class="artifact-browser"></div>
+          </section>
+          <section class="surface">
+            <div class="panel-header compact">
+              <h3>Findings</h3>
+              <span id="findingsStatus" class="muted-label">No report</span>
+            </div>
+            <div id="findingsPanel" class="findings-panel"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="memory">
+        <div class="memory-layout">
+          <section class="surface">
+            <div class="panel-header compact">
+              <h3>Providers</h3>
+              <span id="memoryStatus" class="muted-label">Loading</span>
+            </div>
+            <div id="memoryProviderList" class="provider-list"></div>
+          </section>
+          <section class="surface">
+            <div class="panel-header compact">
+              <h3>Sources</h3>
+              <span id="memorySourceStatus" class="muted-label">No provider selected</span>
+            </div>
+            <div id="memorySourceList" class="source-list"></div>
+          </section>
+          <section class="surface memory-preview-shell">
+            <div class="panel-header compact">
+              <h3 id="memoryPreviewTitle">Memory Preview</h3>
+              <span id="memoryPreviewStatus" class="muted-label">Select a source</span>
+            </div>
+            <pre id="memoryPreview" class="memory-preview">No memory source selected.</pre>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="events">
+        <section class="surface">
+          <div class="panel-header compact">
+            <h3>Event Timeline</h3>
+            <span id="timelineStatus" class="muted-label">Live</span>
+          </div>
+          <div id="eventsTimeline" class="timeline"></div>
+        </section>
+      </section>
+    </main>
+  </div>
 
   <div id="configModal" class="modal" hidden>
     <div class="modal-backdrop" data-close-modal></div>
     <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
       <div class="modal-header">
         <div>
+          <p class="eyebrow">Configuration</p>
           <h2 id="configModalTitle">Project Configuration</h2>
-          <p class="subtitle">Active AI SDLC profile, context, integration, token, role, and safety settings.</p>
+          <p class="subtitle">Active profile, context, integrations, tokens, lanes, roles, and safety settings.</p>
         </div>
         <button id="configCloseButton" class="icon-button" type="button">Close</button>
       </div>
