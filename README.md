@@ -30,7 +30,7 @@ Those files describe one repository at one point in time. New projects should ge
 ## Install On Windows
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File ".\AI SDLC Export\install-ai-sdlc.ps1" -TargetRoot "D:\TargetProject" -Profile web-node
+powershell -ExecutionPolicy Bypass -File ".\install-ai-sdlc.ps1" -TargetRoot "<target-project-path>" -Profile web-node
 ```
 
 Use `-Force` only when you intentionally want to overwrite existing AI SDLC files in the target repo.
@@ -38,7 +38,7 @@ Use `-Force` only when you intentionally want to overwrite existing AI SDLC file
 ## Install On macOS Or Linux
 
 ```sh
-sh "./AI SDLC Export/install-ai-sdlc.sh" --target "/path/to/project" --profile web-node
+sh "./install-ai-sdlc.sh" --target "<target-project-path>" --profile web-node
 ```
 
 Use `--force` only when you intentionally want to overwrite existing AI SDLC files in the target repo.
