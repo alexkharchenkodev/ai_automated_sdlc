@@ -26,7 +26,7 @@ function ConvertTo-JsAssignment {
         [object] $Value
     )
 
-    $json = $Value | ConvertTo-Json -Depth 20 -Compress
+    $json = if ($null -eq $Value) { "null" } else { $Value | ConvertTo-Json -Depth 20 -Compress }
     return "window.$GlobalName = $json;"
 }
 
