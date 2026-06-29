@@ -9,11 +9,15 @@ Runtime files are generated under `.sdlc/live/`:
 
 - `events.jsonl`: append-only role event log
 - `state.json`: latest role state
-- `dashboard/index.html`: self-refreshing local dashboard app
+- `dashboard/index.html`: local dashboard shell
 - `dashboard/runtime-state.js`: browser-readable snapshot of state, events, profile, summary, safety, context memory, integrations, and token report
-- `dashboard/app.js`: local UI for role flow, config summary, project memory, artifacts, and event logs
+- `dashboard/app.js`: local UI for role flow, config summary, project memory, artifacts, event logs, and async state polling
 
 These are generated evidence files. Do not copy them from another project.
+
+The dashboard does not reload the full page on each update. It polls `runtime-state.js`
+every three seconds and updates the rendered sections in place, so selected text,
+the active Project Memory tab, and open modal state are preserved during live runs.
 
 ## Start Dashboard
 
