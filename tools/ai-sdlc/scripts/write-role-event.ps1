@@ -9,6 +9,11 @@ param(
     [string] $Status,
     [string] $Message = "",
     [string[]] $Artifact = @(),
+    [string] $BatchId = "",
+    [string] $TaskId = "",
+    [string] $TaskTitle = "",
+    [string] $TaskStatus = "",
+    [int] $TaskOrder = 0,
     [string] $LiveDirectory = ".sdlc/live",
     [switch] $Pretty
 )
@@ -222,6 +227,132 @@ function Read-AiSdlcMemoryContent {
     }
 }
 
+function New-AiSdlcRoleSnapshot {
+    param(
+        [object[]] $RoleFlow,
+        [object[]] $Events
+    )
+
+    $roles = [System.Collections.Generic.List[object]]::new()
+    foreach ($roleDef in @($RoleFlow)) {
+        $roleEvents = @($Events | Where-Object { $_.role -eq $roleDef.id })
+        $latest = $roleEvents | Select-Object -Last 1
+        $artifacts = [System.Collections.Generic.List[string]]::new()
+        foreach ($roleEvent in $roleEvents) {
+            foreach ($artifact in @($roleEvent.artifacts)) {
+                if ($artifact -and -not $artifacts.Contains([string]$artifact)) {
+                    $artifacts.Add([string]$artifact)
+                }
+            }
+        }
+
+        $roles.Add([ordered]@{
+            id = $roleDef.id
+            title = if ($roleDef.title) { $roleDef.title } else { $roleDef.id }
+            purpose = $roleDef.purpose
+            status = if ($latest) { $latest.status } else { "pending" }
+            message = if ($latest) { $latest.message } else { "" }
+            updatedAtUtc = if ($latest) { $latest.timeUtc } else { "" }
+            artifacts = @($artifacts)
+        })
+    }
+
+    return @($roles)
+}
+
+function Get-AiSdlcActiveRole {
+    param([object[]] $Roles, [string] $FallbackRole)
+
+    $running = @($Roles | Where-Object { $_.status -eq "running" }) | Select-Object -First 1
+    $waiting = @($Roles | Where-Object { $_.status -eq "waiting" }) | Select-Object -First 1
+    $done = @($Roles | Where-Object { $_.id -eq "done" -and $_.status -eq "completed" }) | Select-Object -First 1
+    if ($running) { return $running.id }
+    if ($waiting) { return $waiting.id }
+    if ($done) { return "done" }
+    return $FallbackRole
+}
+
+function Get-AiSdlcDecision {
+    param([object[]] $Roles)
+
+    $blocking = @($Roles | Where-Object { $_.status -eq "blocked" -or $_.status -eq "failed" })
+    $running = @($Roles | Where-Object { $_.status -eq "running" })
+    $waiting = @($Roles | Where-Object { $_.status -eq "waiting" }) | Select-Object -First 1
+    $done = @($Roles | Where-Object { $_.id -eq "done" -and $_.status -eq "completed" }) | Select-Object -First 1
+    if ($blocking.Count -gt 0) { return "blocked" }
+    if ($running.Count -gt 0) { return "running" }
+    if ($waiting) { return "waiting" }
+    if ($done) { return "proceed" }
+    return "review"
+}
+
+function Get-AiSdlcTaskStatus {
+    param(
+        [object[]] $Roles,
+        [object[]] $Events
+    )
+
+    $latestExplicit = @($Events | Where-Object { $_.taskStatus } | Select-Object -Last 1)
+    if ($latestExplicit) { return [string]$latestExplicit.taskStatus }
+
+    if (@($Roles | Where-Object { $_.status -eq "failed" }).Count -gt 0) { return "failed" }
+    if (@($Roles | Where-Object { $_.status -eq "blocked" }).Count -gt 0) { return "blocked" }
+    if (@($Roles | Where-Object { $_.status -eq "running" }).Count -gt 0) { return "running" }
+    if (@($Roles | Where-Object { $_.status -eq "waiting" }).Count -gt 0) { return "waiting" }
+    if (@($Roles | Where-Object { $_.id -eq "done" -and $_.status -eq "completed" }).Count -gt 0) { return "completed" }
+    if (@($Roles | Where-Object { $_.status -eq "completed" }).Count -gt 0) { return "running" }
+    return "planned"
+}
+
+function New-AiSdlcTaskSnapshot {
+    param(
+        [object[]] $RoleFlow,
+        [object[]] $Events
+    )
+
+    $tasks = [System.Collections.Generic.List[object]]::new()
+    $visibleEvents = @($Events | Where-Object { $null -eq $_.taskVisible -or [bool]$_.taskVisible })
+    $groups = @($visibleEvents | Group-Object -Property taskId)
+    $index = 0
+    foreach ($group in $groups) {
+        $index += 1
+        $taskEvents = @($group.Group)
+        $first = $taskEvents | Select-Object -First 1
+        $latest = $taskEvents | Select-Object -Last 1
+        $latestTitle = @($taskEvents | Where-Object { $_.taskTitle } | Select-Object -Last 1)
+        $latestOrder = @($taskEvents | Where-Object { $_.taskOrder -and $_.taskOrder -gt 0 } | Select-Object -Last 1)
+        $roles = New-AiSdlcRoleSnapshot -RoleFlow $RoleFlow -Events $taskEvents
+        $artifacts = [System.Collections.Generic.List[string]]::new()
+        foreach ($taskEvent in $taskEvents) {
+            foreach ($artifact in @($taskEvent.artifacts)) {
+                if ($artifact -and -not $artifacts.Contains([string]$artifact)) {
+                    $artifacts.Add([string]$artifact)
+                }
+            }
+        }
+
+        $status = Get-AiSdlcTaskStatus -Roles $roles -Events $taskEvents
+        $tasks.Add([ordered]@{
+            batchId = if ($latest.batchId) { $latest.batchId } else { $latest.runId }
+            taskId = if ($group.Name) { $group.Name } else { "task-local" }
+            title = if ($latestTitle) { [string]$latestTitle.taskTitle } elseif ($first.message) { [string]$first.message } else { if ($group.Name) { $group.Name } else { "Local task" } }
+            order = if ($latestOrder) { [int]$latestOrder.taskOrder } else { $index }
+            status = $status
+            activeRole = Get-AiSdlcActiveRole -Roles $roles -FallbackRole ([string]$latest.role)
+            decision = Get-AiSdlcDecision -Roles $roles
+            eventCount = $taskEvents.Count
+            artifactCount = $artifacts.Count
+            startedAtUtc = if ($first) { $first.timeUtc } else { "" }
+            updatedAtUtc = if ($latest) { $latest.timeUtc } else { "" }
+            latestMessage = if ($latest) { $latest.message } else { "" }
+            artifacts = @($artifacts)
+            roles = @($roles)
+        })
+    }
+
+    return @($tasks | Sort-Object @{ Expression = "order"; Ascending = $true }, @{ Expression = "startedAtUtc"; Ascending = $true })
+}
+
 function New-DashboardHtml {
     param(
         [object] $State,
@@ -338,6 +469,17 @@ if (-not (Test-Path -LiteralPath $liveRoot)) {
 if (-not $RunId) {
     $RunId = "local"
 }
+$taskIdProvided = [bool]$TaskId
+if (-not $BatchId) {
+    $BatchId = $RunId
+}
+if (-not $TaskId) {
+    $TaskId = if ($Role -eq "system") { "system" } else { "task-local" }
+}
+if (-not $TaskTitle) {
+    $TaskTitle = if ($Role -eq "system") { "System events" } elseif ($Message) { $Message } else { "Local task" }
+}
+$taskVisible = -not ($Role -eq "system" -and -not $taskIdProvided)
 
 $eventsPath = Join-Path $liveRoot "events.jsonl"
 $statePath = Join-Path $liveRoot "state.json"
@@ -364,6 +506,12 @@ $event = [ordered]@{
     status = $Status
     message = $Message
     artifacts = @($Artifact)
+    batchId = $BatchId
+    taskId = $TaskId
+    taskTitle = $TaskTitle
+    taskStatus = $TaskStatus
+    taskOrder = $TaskOrder
+    taskVisible = $taskVisible
 }
 
 $eventLine = ($event | ConvertTo-Json -Depth 8 -Compress)
@@ -379,47 +527,40 @@ if (Test-Path -LiteralPath $eventsPath) {
     }
 }
 
-$roles = [System.Collections.Generic.List[object]]::new()
-foreach ($roleDef in @($roleFlow)) {
-    $roleEvents = @($events | Where-Object { $_.role -eq $roleDef.id })
-    $latest = $roleEvents | Select-Object -Last 1
-    $artifacts = [System.Collections.Generic.List[string]]::new()
-    foreach ($roleEvent in $roleEvents) {
-        foreach ($artifact in @($roleEvent.artifacts)) {
-            if ($artifact -and -not $artifacts.Contains([string]$artifact)) {
-                $artifacts.Add([string]$artifact)
-            }
-        }
-    }
-
-    $roles.Add([ordered]@{
-        id = $roleDef.id
-        title = if ($roleDef.title) { $roleDef.title } else { $roleDef.id }
-        purpose = $roleDef.purpose
-        status = if ($latest) { $latest.status } else { "pending" }
-        message = if ($latest) { $latest.message } else { "" }
-        updatedAtUtc = if ($latest) { $latest.timeUtc } else { "" }
-        artifacts = @($artifacts)
-    })
+$tasks = New-AiSdlcTaskSnapshot -RoleFlow $roleFlow -Events @($events)
+$activeTask = @($tasks | Where-Object { $_.status -eq "running" } | Select-Object -First 1)
+if (-not $activeTask) { $activeTask = @($tasks | Where-Object { $_.status -eq "waiting" } | Select-Object -First 1) }
+if (-not $activeTask) { $activeTask = @($tasks | Where-Object { $_.taskId -eq $TaskId } | Select-Object -First 1) }
+if (-not $activeTask) { $activeTask = @($tasks | Select-Object -Last 1) }
+$roles = if ($activeTask) { @($activeTask.roles) } else { New-AiSdlcRoleSnapshot -RoleFlow $roleFlow -Events @($events) }
+$activeRole = Get-AiSdlcActiveRole -Roles $roles -FallbackRole $Role
+$decision = Get-AiSdlcDecision -Roles $roles
+$taskSummary = [ordered]@{
+    total = @($tasks).Count
+    planned = @($tasks | Where-Object { $_.status -eq "planned" }).Count
+    ready = @($tasks | Where-Object { $_.status -eq "ready" }).Count
+    running = @($tasks | Where-Object { $_.status -eq "running" }).Count
+    waiting = @($tasks | Where-Object { $_.status -eq "waiting" }).Count
+    completed = @($tasks | Where-Object { $_.status -eq "completed" }).Count
+    blocked = @($tasks | Where-Object { $_.status -eq "blocked" }).Count
+    failed = @($tasks | Where-Object { $_.status -eq "failed" }).Count
+    skipped = @($tasks | Where-Object { $_.status -eq "skipped" }).Count
 }
-
-$blocking = @($roles | Where-Object { $_.status -eq "blocked" -or $_.status -eq "failed" })
-$running = @($roles | Where-Object { $_.status -eq "running" }) | Select-Object -First 1
-$waiting = @($roles | Where-Object { $_.status -eq "waiting" }) | Select-Object -First 1
-$done = @($roles | Where-Object { $_.id -eq "done" -and $_.status -eq "completed" }) | Select-Object -First 1
-$activeRole = if ($running) { $running.id } elseif ($waiting) { $waiting.id } elseif ($done) { "done" } else { $Role }
-$decision = if ($blocking.Count -gt 0) { "blocked" } elseif (@($roles | Where-Object { $_.status -eq "running" }).Count -gt 0) { "running" } elseif ($waiting) { "waiting" } elseif ($done) { "proceed" } else { "review" }
 
 $state = [ordered]@{
     schemaVersion = 1
     runId = $RunId
+    batchId = $BatchId
     updatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
     activeRole = $activeRole
+    activeTaskId = if ($activeTask) { $activeTask.taskId } else { $TaskId }
     decision = $decision
     project = (Read-AiSdlcProfile -Root $rootPath)
     liveDirectory = $liveRoot
     eventsPath = $eventsPath
     dashboardPath = $htmlPath
+    taskSummary = $taskSummary
+    tasks = @($tasks)
     roles = @($roles)
 }
 

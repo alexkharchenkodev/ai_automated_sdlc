@@ -19,6 +19,7 @@
 
       <nav class="side-nav" aria-label="Dashboard sections">
         <button class="nav-item active" type="button" data-app-tab="overview">Overview</button>
+        <button class="nav-item" type="button" data-app-tab="tasks">Tasks</button>
         <button class="nav-item" type="button" data-app-tab="evidence">Evidence</button>
         <button class="nav-item" type="button" data-app-tab="memory">Memory</button>
         <button class="nav-item" type="button" data-app-tab="events">Events</button>
@@ -35,7 +36,7 @@
         <div>
           <p class="eyebrow">Current Run</p>
           <h2 id="projectName">Unknown project</h2>
-          <p class="subtitle"><span id="runId">-</span> · updated <span id="updatedAt">-</span></p>
+          <p class="subtitle"><span id="runId">-</span> / updated <span id="updatedAt">-</span></p>
         </div>
         <div class="top-actions">
           <span id="decisionBadge" class="badge">loading</span>
@@ -47,6 +48,10 @@
         <article>
           <span>Active role</span>
           <strong id="activeRole">-</strong>
+        </article>
+        <article>
+          <span>Active task</span>
+          <strong id="activeTask">-</strong>
         </article>
         <article>
           <span>Lane</span>
@@ -63,10 +68,29 @@
       </section>
 
       <section class="tab-panel active" data-tab-panel="overview">
+        <div class="task-summary-strip" aria-label="Task queue summary">
+          <article>
+            <span>Total tasks</span>
+            <strong id="taskTotal">0</strong>
+          </article>
+          <article>
+            <span>Running</span>
+            <strong id="taskRunning">0</strong>
+          </article>
+          <article>
+            <span>Done</span>
+            <strong id="taskCompleted">0</strong>
+          </article>
+          <article>
+            <span>Blocked</span>
+            <strong id="taskBlocked">0</strong>
+          </article>
+        </div>
+
         <div class="panel-header">
           <div>
             <p class="eyebrow">Role Flow</p>
-            <h3>Execution graph</h3>
+            <h3 id="roleGraphTitle">Execution graph</h3>
           </div>
           <span id="roleCount" class="muted-label">0 roles</span>
         </div>
@@ -87,6 +111,50 @@
               <span id="eventCount">0 events</span>
             </div>
             <div id="liveFeed" class="activity-feed"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="tasks">
+        <div class="tasks-layout">
+          <section class="surface">
+            <div class="panel-header compact">
+              <h3>Work Queue</h3>
+              <span id="taskQueueStatus" class="muted-label">0 tasks</span>
+            </div>
+            <div id="taskQueue" class="task-queue"></div>
+          </section>
+
+          <section class="surface task-detail-shell">
+            <div class="panel-header compact">
+              <div>
+                <p class="eyebrow">Selected Task</p>
+                <h3 id="selectedTaskTitle">No task selected</h3>
+              </div>
+              <span id="selectedTaskStatus" class="badge">unknown</span>
+            </div>
+            <div id="selectedTaskMeta" class="task-meta-grid"></div>
+            <div class="panel-header compact task-detail-heading">
+              <h3>Task Role Flow</h3>
+              <span id="selectedTaskRoleCount" class="muted-label">0 roles</span>
+            </div>
+            <div id="selectedTaskRoleGraph" class="role-graph"></div>
+            <div class="task-detail-grid">
+              <section>
+                <div class="panel-header compact">
+                  <h3>Task Events</h3>
+                  <span id="selectedTaskEventCount" class="muted-label">0 events</span>
+                </div>
+                <div id="selectedTaskEvents" class="timeline compact-timeline"></div>
+              </section>
+              <section>
+                <div class="panel-header compact">
+                  <h3>Task Artifacts</h3>
+                  <span id="selectedTaskArtifactCount" class="muted-label">0 artifacts</span>
+                </div>
+                <div id="selectedTaskArtifacts" class="artifact-browser"></div>
+              </section>
+            </div>
           </section>
         </div>
       </section>

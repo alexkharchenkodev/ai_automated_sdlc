@@ -7,6 +7,9 @@ param(
     [string] $ReportDirectory = ".sdlc/local-pipeline",
     [string] $LiveDirectory = ".sdlc/live",
     [string] $RunId = "",
+    [string] $BatchId = "",
+    [string] $TaskId = "",
+    [int] $TaskOrder = 1,
     [switch] $SkipValidationExecution,
     [switch] $OpenDashboard,
     [switch] $Pretty
@@ -24,7 +27,7 @@ function Write-Event {
         [string[]] $Artifact = @()
     )
 
-    & "$PSScriptRoot/write-role-event.ps1" -Root $rootPath -RunId $RunId -Role $Role -Status $Status -Message $Message -Artifact $Artifact -LiveDirectory $LiveDirectory | Out-Null
+    & "$PSScriptRoot/write-role-event.ps1" -Root $rootPath -RunId $RunId -BatchId $BatchId -TaskId $TaskId -TaskTitle $TaskTitle -TaskOrder $TaskOrder -Role $Role -Status $Status -Message $Message -Artifact $Artifact -LiveDirectory $LiveDirectory | Out-Null
 }
 
 function Write-SimpleArtifact {
@@ -50,6 +53,13 @@ $rootPath = Resolve-AiSdlcRoot -Root $Root
 if (-not $RunId) {
     $RunId = "run-" + (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss")
 }
+if (-not $BatchId) {
+    $BatchId = $RunId
+}
+if (-not $TaskId) {
+    $TaskId = "task-" + $RunId.Replace("run-", "")
+}
+$TaskTitle = if ($Task) { $Task } else { "AI SDLC orchestration task" }
 
 $reportRoot = if ([System.IO.Path]::IsPathRooted($ReportDirectory)) { $ReportDirectory } else { Join-Path $rootPath $ReportDirectory }
 if (-not (Test-Path -LiteralPath $reportRoot)) {

@@ -1,8 +1,11 @@
 (function () {
   const POLL_INTERVAL_MS = 3000;
+  const DEFAULT_TASK_ID = "task-local";
+
   let activeTab = localStorage.getItem("aiSdlcDashboardTab") || "overview";
   let activeMemoryProvider = localStorage.getItem("aiSdlcMemoryProvider") || "adr";
   let activeMemorySource = localStorage.getItem("aiSdlcMemorySource") || "";
+  let activeTaskId = localStorage.getItem("aiSdlcActiveTaskId") || "";
   let pendingRender = false;
   let polling = false;
 
@@ -11,14 +14,14 @@
     if (value === undefined || value === null || value === "") return fallback;
     return String(value);
   };
-
+  const safeClass = (value) => text(value, "unknown").toLowerCase().replace(/[^a-z0-9_-]+/g, "_");
   const escapeHtml = (value) => text(value, "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-  const badge = (value) => `<span class="badge status-${escapeHtml(value || "unknown")}">${escapeHtml(value || "unknown")}</span>`;
+  const badge = (value) => `<span class="badge status-${safeClass(value)}">${escapeHtml(value || "unknown")}</span>`;
   const metric = (label, value) => `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
 
   const getData = () => {
@@ -63,6 +66,55 @@
     });
   };
 
+  const eventTaskId = (event) => event.taskId || DEFAULT_TASK_ID;
+  const taskEvents = (events, taskId) => events.filter((event) => eventTaskId(event) === taskId);
+
+  const getTasks = (state, events) => {
+    if (Array.isArray(state.tasks)) return state.tasks;
+
+    const fallbackEvents = events.length ? events : [{ taskId: DEFAULT_TASK_ID, message: "Local task", status: "pending", role: state.activeRole || "system" }];
+    const groups = new Map();
+    fallbackEvents.forEach((event) => {
+      const id = eventTaskId(event);
+      if (!groups.has(id)) groups.set(id, []);
+      groups.get(id).push(event);
+    });
+
+    return Array.from(groups.entries()).map(([taskId, items], index) => {
+      const latest = items[items.length - 1] || {};
+      const titleEvent = items.slice().reverse().find((event) => event.taskTitle);
+      const artifacts = Array.from(new Set(items.flatMap((event) => event.artifacts || []).filter(Boolean)));
+      return {
+        batchId: latest.batchId || state.batchId || state.runId || "local",
+        taskId,
+        title: (titleEvent && titleEvent.taskTitle) || latest.message || taskId,
+        order: latest.taskOrder || index + 1,
+        status: latest.taskStatus || latest.status || "running",
+        activeRole: latest.role || state.activeRole || "system",
+        decision: latest.status || "review",
+        eventCount: items.length,
+        artifactCount: artifacts.length,
+        startedAtUtc: (items[0] || {}).timeUtc || "",
+        updatedAtUtc: latest.timeUtc || "",
+        latestMessage: latest.message || "",
+        artifacts,
+        roles: state.roles || []
+      };
+    });
+  };
+
+  const selectTask = (state, tasks) => {
+    if (!tasks.length) return null;
+    const persisted = tasks.find((task) => task.taskId === activeTaskId);
+    const fromState = tasks.find((task) => task.taskId === state.activeTaskId);
+    const running = tasks.find((task) => task.status === "running");
+    const waiting = tasks.find((task) => task.status === "waiting");
+    const selected = persisted || fromState || running || waiting || tasks[tasks.length - 1];
+    activeTaskId = selected.taskId;
+    localStorage.setItem("aiSdlcActiveTaskId", activeTaskId);
+    return selected;
+  };
+
   const gateCard = (title, decision, details) => `
     <article class="gate-card">
       <div class="panel-header compact">
@@ -72,6 +124,14 @@
       ${details.join("")}
     </article>
   `;
+
+  const renderTaskSummary = (state, tasks) => {
+    const summary = state.taskSummary || {};
+    byId("taskTotal").textContent = text(summary.total ?? tasks.length, "0");
+    byId("taskRunning").textContent = text(summary.running ?? tasks.filter((task) => task.status === "running").length, "0");
+    byId("taskCompleted").textContent = text(summary.completed ?? tasks.filter((task) => task.status === "completed").length, "0");
+    byId("taskBlocked").textContent = text((summary.blocked || 0) + (summary.failed || 0), "0");
+  };
 
   const renderGateGrid = ({ doctor, lane, compliance, safety, tokenUsage, contextMemory, integrations }) => {
     const cards = [
@@ -112,25 +172,29 @@
     byId("gateGrid").innerHTML = cards.join("");
   };
 
-  const renderRoleGraph = (state) => {
-    const roles = Array.isArray(state.roles) ? state.roles : [];
+  const roleGraphHtml = (roles, activeRole) => (roles || []).map((role, index) => {
+    const active = role.id === activeRole ? " active" : "";
+    return `
+      <article class="role-node${active}">
+        <span class="role-index">${index + 1}</span>
+        <span class="role-title">${escapeHtml(role.title || role.id)}</span>
+        ${badge(role.status || "pending")}
+        <p class="role-message">${escapeHtml(role.message || role.purpose || "Waiting for role activity.")}</p>
+      </article>
+    `;
+  }).join("") || `<p class="muted">No role flow loaded.</p>`;
+
+  const renderRoleGraph = (task) => {
+    const roles = task && Array.isArray(task.roles) ? task.roles : [];
     byId("roleCount").textContent = `${roles.length} roles`;
-    byId("roleGraph").innerHTML = roles.map((role, index) => {
-      const active = role.id === state.activeRole ? " active" : "";
-      return `
-        <article class="role-node${active}">
-          <span class="role-index">${index + 1}</span>
-          <span class="role-title">${escapeHtml(role.title || role.id)}</span>
-          ${badge(role.status || "pending")}
-          <p class="role-message">${escapeHtml(role.message || role.purpose || "Waiting for role activity.")}</p>
-        </article>
-      `;
-    }).join("") || `<p class="muted">No role flow loaded.</p>`;
+    byId("roleGraphTitle").textContent = task ? `Execution graph / ${task.title}` : "Execution graph";
+    byId("roleGraph").innerHTML = roleGraphHtml(roles, task && task.activeRole);
   };
 
-  const renderActivity = (events) => {
-    byId("eventCount").textContent = `${events.length} events`;
-    const recent = events.slice(-6).reverse();
+  const renderActivity = (events, selectedTask) => {
+    const scoped = selectedTask ? taskEvents(events, selectedTask.taskId) : events;
+    byId("eventCount").textContent = `${scoped.length} events`;
+    const recent = scoped.slice(-6).reverse();
     byId("liveFeed").innerHTML = recent.map((event) => `
       <article class="feed-item">
         <div class="panel-header compact">
@@ -140,15 +204,18 @@
         <p>${escapeHtml(event.message)}</p>
         <span class="muted-label">${escapeHtml(compactTime(event.timeUtc))}</span>
       </article>
-    `).join("") || `<p class="muted">No events yet.</p>`;
+    `).join("") || `<p class="muted">No events for the selected task yet.</p>`;
   };
 
-  const collectArtifacts = (state, summary) => {
+  const collectArtifacts = (state, summary, selectedTask) => {
     const artifacts = new Map();
-    (state.roles || []).forEach((role) => {
+    ((selectedTask && selectedTask.roles) || state.roles || []).forEach((role) => {
       (role.artifacts || []).forEach((artifact) => {
         if (artifact) artifacts.set(String(artifact), { path: String(artifact), source: role.title || role.id });
       });
+    });
+    ((selectedTask && selectedTask.artifacts) || []).forEach((artifact) => {
+      if (artifact) artifacts.set(String(artifact), { path: String(artifact), source: selectedTask.title || selectedTask.taskId });
     });
     if (summary && summary.reports) {
       Object.keys(summary.reports).forEach((key) => {
@@ -177,15 +244,15 @@
     };
   };
 
-  const renderEvidence = ({ state, summary, compliance, safety, doctor }) => {
-    const artifacts = collectArtifacts(state, summary);
+  const renderEvidence = ({ state, summary, compliance, safety, doctor }, selectedTask) => {
+    const artifacts = collectArtifacts(state, summary, selectedTask);
     byId("artifactCount").textContent = `${artifacts.length} artifacts`;
     byId("artifactList").innerHTML = artifacts.map((artifact) => `
       <article class="artifact-item">
         <strong>${escapeHtml(artifact.source)}</strong>
         <p><code>${escapeHtml(artifact.path)}</code></p>
       </article>
-    `).join("") || `<p class="muted">No artifacts have been reported yet.</p>`;
+    `).join("") || `<p class="muted">No artifacts have been reported for the selected task yet.</p>`;
 
     const findings = [
       ...((compliance && Array.isArray(compliance.blockers)) ? compliance.blockers.map((item) => normalizeFinding("Compliance blocker", item)) : []),
@@ -205,6 +272,61 @@
         ${item.path ? `<p><code>${escapeHtml(item.path)}</code></p>` : ""}
       </article>
     `).join("") || `<p class="muted">No blockers or warnings reported.</p>`;
+  };
+
+  const renderTasks = (tasks, events, selectedTask) => {
+    byId("taskQueueStatus").textContent = `${tasks.length} tasks`;
+    byId("taskQueue").innerHTML = tasks.map((task) => {
+      const active = selectedTask && task.taskId === selectedTask.taskId ? " active" : "";
+      return `
+        <button class="task-row${active}" type="button" data-task-id="${escapeHtml(task.taskId)}" aria-expanded="${active ? "true" : "false"}">
+          <span class="task-row-top">
+            <strong>${escapeHtml(task.order || "-")}. ${escapeHtml(task.title || task.taskId)}</strong>
+            ${badge(task.status || "unknown")}
+          </span>
+          <span class="task-row-meta">
+            ${escapeHtml(task.activeRole || "-")} / ${escapeHtml(task.eventCount || 0)} events / ${escapeHtml(task.artifactCount || 0)} artifacts
+          </span>
+          <span class="task-row-message">${escapeHtml(task.latestMessage || "Waiting for task activity.")}</span>
+        </button>
+      `;
+    }).join("") || `<p class="muted">No tasks have been recorded yet.</p>`;
+
+    if (!selectedTask) {
+      byId("selectedTaskTitle").textContent = "No task selected";
+      byId("selectedTaskStatus").textContent = "unknown";
+      byId("selectedTaskStatus").className = "badge status-unknown";
+      byId("selectedTaskMeta").innerHTML = "";
+      byId("selectedTaskRoleGraph").innerHTML = `<p class="muted">No task selected.</p>`;
+      byId("selectedTaskEvents").innerHTML = `<p class="muted">No task selected.</p>`;
+      byId("selectedTaskArtifacts").innerHTML = `<p class="muted">No task selected.</p>`;
+      return;
+    }
+
+    const scoped = taskEvents(events, selectedTask.taskId);
+    byId("selectedTaskTitle").textContent = selectedTask.title || selectedTask.taskId;
+    byId("selectedTaskStatus").textContent = selectedTask.status || "unknown";
+    byId("selectedTaskStatus").className = `badge status-${safeClass(selectedTask.status)}`;
+    byId("selectedTaskMeta").innerHTML = [
+      metric("Task ID", selectedTask.taskId),
+      metric("Batch", selectedTask.batchId || "-"),
+      metric("Active role", selectedTask.activeRole || "-"),
+      metric("Updated", compactTime(selectedTask.updatedAtUtc))
+    ].join("");
+    byId("selectedTaskRoleCount").textContent = `${(selectedTask.roles || []).length} roles`;
+    byId("selectedTaskRoleGraph").innerHTML = roleGraphHtml(selectedTask.roles || [], selectedTask.activeRole);
+    byId("selectedTaskEventCount").textContent = `${scoped.length} events`;
+    byId("selectedTaskEvents").innerHTML = scoped.slice().reverse().map((event) => `
+      <article class="timeline-item">
+        <span class="muted-label">${escapeHtml(compactTime(event.timeUtc))}</span>
+        <span>${escapeHtml(event.role)} ${badge(event.status)}</span>
+        <div><p>${escapeHtml(event.message)}</p></div>
+      </article>
+    `).join("") || `<p class="muted">No events for this task.</p>`;
+    byId("selectedTaskArtifactCount").textContent = `${(selectedTask.artifacts || []).length} artifacts`;
+    byId("selectedTaskArtifacts").innerHTML = (selectedTask.artifacts || []).map((artifact) => `
+      <article class="artifact-item"><p><code>${escapeHtml(artifact)}</code></p></article>
+    `).join("") || `<p class="muted">No artifacts for this task.</p>`;
   };
 
   const getMemoryProvider = (contextMemory, memoryContent, name) => {
@@ -274,18 +396,47 @@
       : `No preview available for this source.\n\nStatus: ${selected.status || "unknown"}\nPath: ${selected.resolvedPath || selected.path || "-"}`;
   };
 
-  const renderTimeline = (events) => {
-    byId("timelineStatus").textContent = `${events.length} events`;
-    byId("eventsTimeline").innerHTML = events.slice().reverse().map((event) => `
-      <article class="timeline-item">
-        <span class="muted-label">${escapeHtml(compactTime(event.timeUtc))}</span>
-        <span>${escapeHtml(event.role)} ${badge(event.status)}</span>
-        <div>
-          <p>${escapeHtml(event.message)}</p>
-          ${(event.artifacts || []).length ? `<p><code>${escapeHtml((event.artifacts || []).join(", "))}</code></p>` : ""}
-        </div>
-      </article>
-    `).join("") || `<p class="muted">No events yet.</p>`;
+  const renderTimeline = (events, tasks, selectedTask) => {
+    byId("timelineStatus").textContent = `${events.length} events / ${tasks.length} tasks`;
+    const systemEvents = events.filter((event) => event.taskVisible === false);
+    const timelineGroups = tasks.slice();
+    if (systemEvents.length) {
+      timelineGroups.push({
+        taskId: "system",
+        title: "System events",
+        status: "system",
+        eventCount: systemEvents.length,
+        artifactCount: systemEvents.flatMap((event) => event.artifacts || []).filter(Boolean).length
+      });
+    }
+
+    byId("eventsTimeline").innerHTML = timelineGroups.slice().reverse().map((task) => {
+      const scoped = taskEvents(events, task.taskId).slice().reverse();
+      const open = selectedTask && selectedTask.taskId === task.taskId ? " open" : "";
+      return `
+        <details class="event-group"${open}>
+          <summary>
+            <span>
+              <strong>${escapeHtml(task.title || task.taskId)}</strong>
+              <small>${escapeHtml(task.eventCount || 0)} events / ${escapeHtml(task.artifactCount || 0)} artifacts</small>
+            </span>
+            ${badge(task.status || "unknown")}
+          </summary>
+          <div class="timeline">
+            ${scoped.map((event) => `
+              <article class="timeline-item">
+                <span class="muted-label">${escapeHtml(compactTime(event.timeUtc))}</span>
+                <span>${escapeHtml(event.role)} ${badge(event.status)}</span>
+                <div>
+                  <p>${escapeHtml(event.message)}</p>
+                  ${(event.artifacts || []).length ? `<p><code>${escapeHtml((event.artifacts || []).join(", "))}</code></p>` : ""}
+                </div>
+              </article>
+            `).join("") || `<p class="muted">No events for this task.</p>`}
+          </div>
+        </details>
+      `;
+    }).join("") || `<p class="muted">No events yet.</p>`;
   };
 
   const renderConfigModal = () => {
@@ -296,7 +447,8 @@
     }
 
     const configSummary = {
-      run: { id: state.runId, activeRole: state.activeRole, decision: state.decision },
+      run: { id: state.runId, batchId: state.batchId, activeTaskId: state.activeTaskId, activeRole: state.activeRole, decision: state.decision },
+      tasks: state.taskSummary || "not generated",
       project: {
         name: profile.projectName || profile.name || "Unknown",
         profile: profile.profileName || "-",
@@ -352,26 +504,31 @@
     pendingRender = false;
     const data = getData();
     const { state, events, profile, doctor, lane, compliance, summary } = data;
+    const tasks = getTasks(state, events);
+    const selectedTask = selectTask(state, tasks);
 
     byId("runId").textContent = text(state.runId);
-    byId("activeRole").textContent = text(state.activeRole);
+    byId("activeRole").textContent = text((selectedTask && selectedTask.activeRole) || state.activeRole);
+    byId("activeTask").textContent = text(selectedTask && selectedTask.title);
     byId("projectName").textContent = text(profile.projectName || profile.name || state.projectName || "Unknown Project");
     byId("updatedAt").textContent = text(compactTime(state.updatedAtUtc));
     byId("doctorDecision").textContent = text(doctor && doctor.decision, "unknown");
     byId("laneName").textContent = text((lane && lane.lane) || (summary && summary.lane));
     byId("complianceDecision").textContent = text((compliance && compliance.decision) || (summary && summary.complianceDecision), "review");
     byId("decisionBadge").textContent = text(state.decision, "review");
-    byId("decisionBadge").className = `badge status-${text(state.decision, "review")}`;
+    byId("decisionBadge").className = `badge status-${safeClass(state.decision || "review")}`;
 
     const loadedReports = [data.doctor, data.lane, data.compliance, data.safety, data.tokenUsage, data.contextMemory, data.integrations].filter(Boolean).length;
     byId("frameworkStatus").textContent = `${loadedReports}/7 reports`;
 
-    renderRoleGraph(state);
+    renderTaskSummary(state, tasks);
+    renderRoleGraph(selectedTask);
     renderGateGrid(data);
-    renderActivity(events);
-    renderEvidence(data);
+    renderActivity(events, selectedTask);
+    renderTasks(tasks, events, selectedTask);
+    renderEvidence(data, selectedTask);
     renderMemory(data.contextMemory, data.memoryContent);
-    renderTimeline(events);
+    renderTimeline(events, tasks, selectedTask);
     setActiveTab(activeTab);
   };
 
@@ -416,6 +573,13 @@
       if (pendingRender && !hasActiveSelection()) renderDashboard();
     });
     document.addEventListener("click", (event) => {
+      const task = event.target.closest("[data-task-id]");
+      if (task) {
+        activeTaskId = task.dataset.taskId;
+        localStorage.setItem("aiSdlcActiveTaskId", activeTaskId);
+        renderDashboard();
+      }
+
       const provider = event.target.closest("[data-memory-provider]");
       if (provider) {
         activeMemoryProvider = provider.dataset.memoryProvider;

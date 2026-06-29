@@ -206,7 +206,7 @@ The verifier returns `proceed`, `review_required`, or `blocked`. Use
 `-AllowReviewRequired` / `--allow-review-required` only for bootstrap or advisory
 CI mode.
 
-## Visualize Role Progress
+## Visualize Task And Role Progress
 
 Start a local live dashboard:
 
@@ -238,10 +238,20 @@ The dashboard writes and reads:
 ```text
 .sdlc/live/events.jsonl
 .sdlc/live/state.json
-.sdlc/live/index.html
+.sdlc/live/dashboard/index.html
 ```
 
-Any AI client can update the same dashboard by emitting role events with `write-role-event.ps1`.
+Any AI client can update the same dashboard by emitting role events with
+`write-role-event.ps1`. For one-off usage, `TaskId` is optional and the dashboard
+uses `task-local`. For real multi-step work, pass batch and task metadata so the
+dashboard can group events into a queue:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\write-role-event.ps1" -RunId "run-20260629-120000" -BatchId "batch-20260629-001" -TaskId "task-003" -TaskTitle "Add button action" -TaskOrder 3 -TaskStatus running -Role engineering -Status running -Message "Editing scoped files" -Artifact "src/example.ts" -Pretty
+```
+
+The dashboard shows task totals, active task, planned/running/completed/blocked
+work, task-scoped role flow, task artifacts, and collapsible event groups.
 
 ## Configure Context, Memory, Tokens, And Integrations
 

@@ -1,23 +1,42 @@
 # Live Role Dashboard
 
-The portable AI SDLC dashboard visualizes which role is active, what it is doing, which execution lane is selected, whether compliance passed, and which artifacts have been produced.
+The portable AI SDLC dashboard visualizes which task and role are active, what they are doing, which execution lane is selected, whether compliance passed, and which artifacts have been produced.
 It also exposes a `Config` modal and a `Project Memory` tab for ADR, RAG, GraphRAG, and code-search readiness.
 
 ## Files
 
 Runtime files are generated under `.sdlc/live/`:
 
-- `events.jsonl`: append-only role event log
-- `state.json`: latest role state
+- `events.jsonl`: append-only task and role event log
+- `state.json`: latest task queue and role state
 - `dashboard/index.html`: local dashboard shell
 - `dashboard/runtime-state.js`: browser-readable snapshot of state, events, profile, summary, lane, compliance, safety, context memory, memory previews, integrations, and token report
-- `dashboard/app.js`: local UI for the role graph, config summary, project memory, artifacts, event logs, and async state polling
+- `dashboard/app.js`: local UI for the task queue, role graph, config summary, project memory, artifacts, grouped event logs, and async state polling
 
 These are generated evidence files. Do not copy them from another project.
 
 The dashboard does not reload the full page on each update. It polls `runtime-state.js`
 every three seconds and updates the rendered sections in place, so selected text,
 the active Project Memory tab, and open modal state are preserved during live runs.
+
+## Task Queue Model
+
+Events can belong to a batch and task:
+
+- `runId`: one local dashboard/orchestrator run
+- `batchId`: a group of related tasks, such as a BA split of a larger request
+- `taskId`: one executable task inside the batch
+- `taskTitle`: user-readable task name
+- `taskOrder`: queue ordering hint
+- `taskStatus`: task-level state when known
+
+The dashboard groups events by `taskId`. The `Tasks` tab shows the queue,
+current task, planned work, completed work, blocked work, task-scoped role flow,
+task events, and task artifacts. The `Events` tab shows collapsible task groups
+instead of one flat stream.
+
+If an agent does not provide task metadata, `write-role-event.ps1` keeps backward
+compatibility by assigning the event to `task-local`.
 
 ## Project Memory Preview
 
@@ -83,7 +102,12 @@ Each event is one JSON object:
   "role": "engineering",
   "status": "running",
   "message": "Editing scoped files",
-  "artifacts": ["src/example.ts"]
+  "artifacts": ["src/example.ts"],
+  "batchId": "batch-20260629-001",
+  "taskId": "task-003",
+  "taskTitle": "Add button action",
+  "taskStatus": "running",
+  "taskOrder": 3
 }
 ```
 
@@ -100,12 +124,29 @@ Statuses:
 - `blocked`
 - `failed`
 
+Task statuses use the same operational vocabulary plus queue-level values:
+
+- `planned`
+- `ready`
+- `running`
+- `waiting`
+- `completed`
+- `blocked`
+- `failed`
+- `skipped`
+
 ## Agent Usage
 
 Any AI client that can run commands can emit role progress:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\write-role-event.ps1 -Role engineering -Status running -Message "Editing scoped files" -Artifact "src/example.ts" -Pretty
+```
+
+Task-aware event:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\write-role-event.ps1 -RunId "run-20260629-120000" -BatchId "batch-20260629-001" -TaskId "task-003" -TaskTitle "Add button action" -TaskOrder 3 -TaskStatus running -Role engineering -Status running -Message "Editing scoped files" -Artifact "src/example.ts" -Pretty
 ```
 
 The dashboard is intentionally file-based. It does not require a database, network service, or vendor-specific agent runtime.
