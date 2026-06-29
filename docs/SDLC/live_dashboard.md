@@ -66,6 +66,9 @@ Each event is one JSON object:
 }
 ```
 
+Framework-owned dashboard/bootstrap events use `role: "system"`. They are not
+SDLC role work and should be interpreted as local dashboard lifecycle messages.
+
 Statuses:
 
 - `pending`

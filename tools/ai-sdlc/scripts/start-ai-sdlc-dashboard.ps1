@@ -16,7 +16,7 @@ if (-not (Test-Path -LiteralPath $liveRoot)) {
 
 $dashboardPath = Join-Path (Join-Path $liveRoot "dashboard") "index.html"
 if (-not (Test-Path -LiteralPath $dashboardPath)) {
-    & "$PSScriptRoot/write-role-event.ps1" -Root $rootPath -Role "intake" -Status "pending" -Message "Dashboard initialized. Start an orchestrator run to see live role progress." -LiveDirectory $LiveDirectory | Out-Null
+    & "$PSScriptRoot/write-role-event.ps1" -Root $rootPath -RunId "system" -Role "system" -Status "pending" -Message "Dashboard initialized. Start an orchestrator run to see live role progress." -LiveDirectory $LiveDirectory | Out-Null
 }
 
 if (-not $NoOpen) {
