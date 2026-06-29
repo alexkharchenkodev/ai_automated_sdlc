@@ -1,0 +1,70 @@
+schema_version: 1
+
+settings:
+  default_mode: work_order
+  command_timeout_seconds: 900
+  fail_on_missing_executor: false
+  work_order_directory: .sdlc/executor/work-orders
+  result_directory: .sdlc/executor/results
+
+# Commands are intentionally disabled by default. A target project can enable
+# any role and point it at Codex, Claude, Copilot CLI, a local agent, CI job,
+# or an internal orchestrator. Token placeholders:
+# {{root}}, {{task_contract}}, {{task_id}}, {{role}}, {{work_order}},
+# {{result_directory}}, {{live_directory}}
+role_executors:
+  ba:
+    enabled: false
+    command: ""
+    required_outputs:
+      - acceptanceCriteria
+      - nonGoals
+  architecture:
+    enabled: false
+    command: ""
+    required_outputs:
+      - architectureBoundaries
+      - protectedSurfaces
+      - dependencies
+  memory_reuse:
+    enabled: false
+    command: ""
+    required_outputs:
+      - reuseEvidence
+  design:
+    enabled: false
+    command: ""
+    required_outputs:
+      - uxNotes
+      - validationPlan
+  engineering:
+    enabled: false
+    command: ""
+    required_outputs:
+      - implementationNotes
+      - changedFiles
+      - validationPlan
+  code_review:
+    enabled: false
+    command: ""
+    required_outputs:
+      - reviewFindings
+      - validationPlan
+  test_planning:
+    enabled: false
+    command: ""
+    required_outputs:
+      - validationPlan
+  test_execution:
+    enabled: false
+    command: ""
+    required_outputs:
+      - validationEvidence
+      - residualRisk
+  evidence:
+    enabled: false
+    command: ""
+    required_outputs:
+      - evidenceBundle
+      - residualRisk
+

@@ -9,7 +9,7 @@ Use it to install a reusable AI SDLC baseline into another repository, then adap
 - `docs/SDLC`: universal operating model, gates, role contracts, evidence rules, and templates.
 - `docs/LLM`: lean AI coding and naming guardrails that point to the project profile instead of a fixed engine or language.
 - `tools/ai-sdlc/config`: portable profile and gate configuration examples.
-- `tools/ai-sdlc/scripts/ai-sdlc.ps1` and `ai-sdlc.sh`: single CLI entrypoints for doctor, dashboard, task contracts, queue, gates, memory lifecycle, evidence, pipeline, and orchestrator.
+- `tools/ai-sdlc/scripts/ai-sdlc.ps1` and `ai-sdlc.sh`: single CLI entrypoints for doctor, dashboard, task contracts, queue, real executor, gates, memory lifecycle, evidence, pipeline, and orchestrator.
 - `adapters`: Codex, Copilot, Claude, Cursor, and generic AI client adapter templates.
 - `dashboard`: local static dashboard for role flow, safety, integrations, context memory, and token estimates.
 - `profiles`: ready-to-copy profiles for common stacks.
@@ -82,6 +82,7 @@ tools/ai-sdlc/config/integrations.yaml
 tools/ai-sdlc/config/token_budget.yaml
 tools/ai-sdlc/config/execution_lanes.yaml
 tools/ai-sdlc/config/mcp_servers.example.yaml
+tools/ai-sdlc/config/role_executors.yaml
 ```
 
 When a protected file already exists, update writes the new framework copy as
@@ -214,6 +215,28 @@ sh "./tools/ai-sdlc/scripts/ai-sdlc.sh" queue
 ```
 
 The queue runner writes reports under `.sdlc/task-queue/` and sends live task events to the dashboard.
+
+## Run The Real Executor
+
+Use the executor when another AI client, local worker, CI job, or agent process should perform role work.
+
+Create work orders and wait for artifact submission:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" executor -Mode work_order -Pretty
+```
+
+Run configured external commands from `tools/ai-sdlc/config/role_executors.yaml`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" executor -Mode external -Pretty
+```
+
+Submit role artifacts from any AI client:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" submit-artifact -TaskContractPath ".sdlc/task-contracts/example.json" -Role engineering -Append "implementationNotes=Implemented requested behavior.;changedFiles=src/example.ts"
+```
 
 Verify the final machine-readable SDLC verdict:
 

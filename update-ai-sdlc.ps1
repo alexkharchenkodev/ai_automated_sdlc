@@ -102,7 +102,8 @@ function Update-InstallManifest {
             ".sdlc/reopen-policy",
             ".sdlc/approval-gates",
             ".sdlc/memory-index",
-            ".sdlc/memory-lifecycle"
+            ".sdlc/memory-lifecycle",
+            ".sdlc/executor"
         )
     }
 
@@ -127,7 +128,8 @@ $protectedFiles = @(
     "tools/ai-sdlc/config/integrations.yaml",
     "tools/ai-sdlc/config/token_budget.yaml",
     "tools/ai-sdlc/config/execution_lanes.yaml",
-    "tools/ai-sdlc/config/mcp_servers.example.yaml"
+    "tools/ai-sdlc/config/mcp_servers.example.yaml",
+    "tools/ai-sdlc/config/role_executors.yaml"
 )
 $protectedSet = @{}
 foreach ($file in $protectedFiles) { $protectedSet[$file] = $true }

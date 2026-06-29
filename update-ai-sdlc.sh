@@ -45,7 +45,8 @@ is_protected() {
     tools/ai-sdlc/config/integrations.yaml|\
     tools/ai-sdlc/config/token_budget.yaml|\
     tools/ai-sdlc/config/execution_lanes.yaml|\
-    tools/ai-sdlc/config/mcp_servers.example.yaml)
+    tools/ai-sdlc/config/mcp_servers.example.yaml|\
+    tools/ai-sdlc/config/role_executors.yaml)
       return 0
       ;;
     *) return 1 ;;
@@ -126,9 +127,10 @@ if [ "$dry_run" != "true" ]; then
     printf '    "tools/ai-sdlc/config/integrations.yaml",\n'
     printf '    "tools/ai-sdlc/config/token_budget.yaml",\n'
     printf '    "tools/ai-sdlc/config/execution_lanes.yaml",\n'
-    printf '    "tools/ai-sdlc/config/mcp_servers.example.yaml"\n'
+    printf '    "tools/ai-sdlc/config/mcp_servers.example.yaml",\n'
+    printf '    "tools/ai-sdlc/config/role_executors.yaml"\n'
     printf '  ],\n'
-    printf '  "generatedDirectories": [".sdlc/local-pipeline", ".sdlc/live", ".sdlc/approvals", ".sdlc/task-contracts", ".sdlc/task-queue", ".sdlc/handoffs", ".sdlc/reopen-policy", ".sdlc/approval-gates", ".sdlc/memory-index", ".sdlc/memory-lifecycle"]\n'
+    printf '  "generatedDirectories": [".sdlc/local-pipeline", ".sdlc/live", ".sdlc/approvals", ".sdlc/task-contracts", ".sdlc/task-queue", ".sdlc/handoffs", ".sdlc/reopen-policy", ".sdlc/approval-gates", ".sdlc/memory-index", ".sdlc/memory-lifecycle", ".sdlc/executor"]\n'
     printf '}\n'
   } > "$manifest_path"
 fi

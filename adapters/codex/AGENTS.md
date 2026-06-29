@@ -8,6 +8,7 @@ Use this adapter when a project is driven from Codex.
 2. Run or review `tools/ai-sdlc/scripts/ai-sdlc.ps1 doctor`.
 3. Create or load a task contract before non-trivial implementation.
 4. Emit live role events with `tools/ai-sdlc/scripts/write-role-event.ps1`.
+5. When running under the real executor, read `.sdlc/executor/work-orders/` and submit role outputs with `submit-role-artifact.ps1`.
 
 ## Operating Loop
 
@@ -22,4 +23,3 @@ Use this adapter when a project is driven from Codex.
 - Prefer repo-local commands and existing scripts over invented workflows.
 - Keep user-owned changes intact.
 - If a gate blocks, report the reason and the next smallest unblock step.
-
