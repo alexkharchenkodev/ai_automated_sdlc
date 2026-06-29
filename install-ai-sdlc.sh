@@ -150,6 +150,7 @@ write_json_array_from_paths() {
   printf '    "tools/ai-sdlc/config/context_memory.yaml",\n'
   printf '    "tools/ai-sdlc/config/integrations.yaml",\n'
   printf '    "tools/ai-sdlc/config/token_budget.yaml",\n'
+  printf '    "tools/ai-sdlc/config/execution_lanes.yaml",\n'
   printf '    "tools/ai-sdlc/config/mcp_servers.example.yaml"\n'
   printf '  ],\n'
   printf '  "generatedDirectories": [\n'
@@ -172,7 +173,7 @@ cat <<EOF
   "force": $force,
   "nextSteps": [
     "Edit tools/ai-sdlc/config/project-profile.yaml for the target repository.",
-    "Edit tools/ai-sdlc/config/context_memory.yaml, integrations.yaml, and token_budget.yaml.",
+    "Edit tools/ai-sdlc/config/context_memory.yaml, integrations.yaml, token_budget.yaml, and execution_lanes.yaml.",
     "Read AGENTS.md and docs/SDLC/README.md before starting AI-assisted work.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.sh to generate fresh SDLC evidence on macOS/Linux.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.sh --open-dashboard to view live role progress.",

@@ -44,6 +44,7 @@ is_protected() {
     tools/ai-sdlc/config/context_memory.yaml|\
     tools/ai-sdlc/config/integrations.yaml|\
     tools/ai-sdlc/config/token_budget.yaml|\
+    tools/ai-sdlc/config/execution_lanes.yaml|\
     tools/ai-sdlc/config/mcp_servers.example.yaml)
       return 0
       ;;
@@ -123,6 +124,7 @@ if [ "$dry_run" != "true" ]; then
     printf '    "tools/ai-sdlc/config/context_memory.yaml",\n'
     printf '    "tools/ai-sdlc/config/integrations.yaml",\n'
     printf '    "tools/ai-sdlc/config/token_budget.yaml",\n'
+    printf '    "tools/ai-sdlc/config/execution_lanes.yaml",\n'
     printf '    "tools/ai-sdlc/config/mcp_servers.example.yaml"\n'
     printf '  ],\n'
     printf '  "generatedDirectories": [".sdlc/local-pipeline", ".sdlc/live", ".sdlc/approvals"]\n'

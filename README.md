@@ -78,6 +78,7 @@ tools/ai-sdlc/config/project-profile.yaml
 tools/ai-sdlc/config/context_memory.yaml
 tools/ai-sdlc/config/integrations.yaml
 tools/ai-sdlc/config/token_budget.yaml
+tools/ai-sdlc/config/execution_lanes.yaml
 tools/ai-sdlc/config/mcp_servers.example.yaml
 ```
 
@@ -158,6 +159,7 @@ The pipeline writes fresh evidence under:
 ```text
 .sdlc/local-pipeline/
   sdlc-impact-report.json
+  sdlc-lane-report.json
   sdlc-task-intake-report.json
   sdlc-context-memory-report.json
   sdlc-integrations-report.json
@@ -168,10 +170,27 @@ The pipeline writes fresh evidence under:
   sdlc-safe-change-report.json
   sdlc-token-usage-report.json
   sdlc-evidence-bundle.json
+  sdlc-compliance-report.json
   sdlc-summary.json
 ```
 
 Use `-SkipValidationExecution` or `--skip-validation` when first bootstrapping a project whose build/test commands are not ready yet.
+
+Verify the final machine-readable SDLC verdict:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\verify-sdlc-compliance.ps1" -ReportDirectory ".sdlc/local-pipeline" -Pretty
+```
+
+On macOS/Linux:
+
+```sh
+sh "./tools/ai-sdlc/scripts/verify-sdlc-compliance.sh" --report-directory ".sdlc/local-pipeline"
+```
+
+The verifier returns `proceed`, `review_required`, or `blocked`. Use
+`-AllowReviewRequired` / `--allow-review-required` only for bootstrap or advisory
+CI mode.
 
 ## Visualize Role Progress
 
@@ -218,6 +237,7 @@ After install, tune these project-level files:
 tools/ai-sdlc/config/context_memory.yaml
 tools/ai-sdlc/config/integrations.yaml
 tools/ai-sdlc/config/token_budget.yaml
+tools/ai-sdlc/config/execution_lanes.yaml
 tools/ai-sdlc/config/mcp_servers.example.yaml
 ```
 
@@ -249,12 +269,15 @@ The installer also copies:
 ```
 
 The workflow builds a changed-file list, runs the portable pipeline, and uploads `.sdlc/local-pipeline` as an artifact. On PR/push it defaults to evidence generation without executing project validation commands so a newly installed profile does not break the first CI run. Review `project-profile.yaml` and the workflow before enabling strict CI validation for release decisions.
+It also runs `verify-sdlc-compliance.ps1`; by default GitHub CI allows
+`review_required` but fails on `blocked`. Set the workflow input
+`strict_compliance=true` to fail on review-required decisions too.
 
 ## Recommended Adoption Steps
 
 1. Install the baseline into the target repo.
 2. Edit `project-profile.yaml` with real source roots, build commands, test commands, design/tracker/CI tools, and protected surfaces.
-3. Edit `context_memory.yaml`, `integrations.yaml`, and `token_budget.yaml`.
+3. Edit `context_memory.yaml`, `integrations.yaml`, `token_budget.yaml`, and `execution_lanes.yaml`.
 4. Run the automated local SDLC pipeline once with `--skip-validation` or `-SkipValidationExecution` to verify evidence generation.
 5. Add project-specific docs under `docs/LLM` only when the target stack needs them.
 6. Keep core gates universal; put stack-specific rules in the profile.

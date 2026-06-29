@@ -119,6 +119,7 @@ $protectedFiles = @(
     "tools/ai-sdlc/config/context_memory.yaml",
     "tools/ai-sdlc/config/integrations.yaml",
     "tools/ai-sdlc/config/token_budget.yaml",
+    "tools/ai-sdlc/config/execution_lanes.yaml",
     "tools/ai-sdlc/config/mcp_servers.example.yaml"
 )
 $protectedSet = @{}

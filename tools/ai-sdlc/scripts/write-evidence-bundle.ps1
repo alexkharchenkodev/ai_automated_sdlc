@@ -14,6 +14,7 @@ $reportRoot = if ([System.IO.Path]::IsPathRooted($ReportDirectory)) { $ReportDir
 
 $requiredReports = @(
     "sdlc-impact-report.json",
+    "sdlc-lane-report.json",
     "sdlc-task-intake-report.json",
     "sdlc-context-memory-report.json",
     "sdlc-integrations-report.json",
@@ -41,14 +42,24 @@ foreach ($report in $requiredReports) {
 }
 
 $validationPath = Join-Path $reportRoot "sdlc-selected-validation-report.json"
+$lanePath = Join-Path $reportRoot "sdlc-lane-report.json"
 $safeChangePath = Join-Path $reportRoot "sdlc-safe-change-report.json"
 $contextPath = Join-Path $reportRoot "sdlc-context-memory-report.json"
 $integrationsPath = Join-Path $reportRoot "sdlc-integrations-report.json"
 $tokenPath = Join-Path $reportRoot "sdlc-token-usage-report.json"
 $validationPassed = $false
+$validationSkipped = $null
 if (Test-Path -LiteralPath $validationPath) {
     $validation = Get-Content -LiteralPath $validationPath -Raw | ConvertFrom-Json
     $validationPassed = [bool]$validation.passed
+    $validationSkipped = [bool]$validation.skipped
+}
+$laneName = "unknown"
+$laneRequiresValidation = $false
+if (Test-Path -LiteralPath $lanePath) {
+    $lane = Get-Content -LiteralPath $lanePath -Raw | ConvertFrom-Json
+    $laneName = $lane.lane
+    $laneRequiresValidation = [bool]$lane.requireValidationExecution
 }
 $safeChangePassed = $false
 if (Test-Path -LiteralPath $safeChangePath) {
@@ -73,10 +84,11 @@ if (Test-Path -LiteralPath $tokenPath) {
     $tokenDecision = $tokenUsage.decision
 }
 
-$passed = ($missing.Count -eq 0 -and $validationPassed -and $safeChangePassed -and $contextPassed -and $integrationsPassed -and $tokenPassed)
+$laneValidationSatisfied = -not ($laneRequiresValidation -and [bool]$validationSkipped)
+$passed = ($missing.Count -eq 0 -and $validationPassed -and $laneValidationSatisfied -and $safeChangePassed -and $contextPassed -and $integrationsPassed -and $tokenPassed)
 $decision = if ($passed) {
     "proceed"
-} elseif (-not $safeChangePassed -or $tokenDecision -eq "blocked") {
+} elseif (-not $safeChangePassed -or -not $laneValidationSatisfied -or $tokenDecision -eq "blocked") {
     "blocked"
 } else {
     "review_required"
@@ -88,6 +100,9 @@ $result = [ordered]@{
     reportDirectory = $reportRoot
     passed = $passed
     decision = $decision
+    lane = $laneName
+    laneRequiresValidationExecution = $laneRequiresValidation
+    validationSkipped = $validationSkipped
     validationPassed = $validationPassed
     safeChangePassed = $safeChangePassed
     contextMemoryPassed = $contextPassed
@@ -101,7 +116,9 @@ $result = [ordered]@{
 $lines = @(
     "- Passed: $passed",
     "- Decision: $($result.decision)",
+    "- Lane: $laneName",
     "- Validation passed: $validationPassed",
+    "- Validation skipped: $validationSkipped",
     "- Context memory passed: $contextPassed",
     "- Integrations passed: $integrationsPassed",
     "- Token usage passed: $tokenPassed",

@@ -62,6 +62,8 @@ if ($OpenDashboard) {
 
 $impactJson = Join-Path $reportRoot "sdlc-impact-report.json"
 $impactMd = Join-Path $reportRoot "sdlc-impact-report.md"
+$laneJson = Join-Path $reportRoot "sdlc-lane-report.json"
+$laneMd = Join-Path $reportRoot "sdlc-lane-report.md"
 $taskJson = Join-Path $reportRoot "sdlc-task-intake-report.json"
 $taskMd = Join-Path $reportRoot "sdlc-task-intake-report.md"
 $contextJson = Join-Path $reportRoot "sdlc-context-memory-report.json"
@@ -88,12 +90,16 @@ $tokenJson = Join-Path $reportRoot "sdlc-token-usage-report.json"
 $tokenMd = Join-Path $reportRoot "sdlc-token-usage-report.md"
 $bundleJson = Join-Path $reportRoot "sdlc-evidence-bundle.json"
 $bundleMd = Join-Path $reportRoot "sdlc-evidence-bundle.md"
+$complianceJson = Join-Path $reportRoot "sdlc-compliance-report.json"
+$complianceMd = Join-Path $reportRoot "sdlc-compliance-report.md"
 
 try {
     Write-Event -Role "intake" -Status "running" -Message "Analyzing changed files and normalizing task intake."
     & "$PSScriptRoot/analyze-impact.ps1" -Root $rootPath -ChangedFile $ChangedFile -ChangedFilesPath $ChangedFilesPath -JsonOutputPath $impactJson -MarkdownOutputPath $impactMd | Out-Null
+    & "$PSScriptRoot/select-sdlc-lane.ps1" -Root $rootPath -ImpactReportPath $impactJson -JsonOutputPath $laneJson -MarkdownOutputPath $laneMd | Out-Null
     & "$PSScriptRoot/write-task-intake-report.ps1" -Root $rootPath -Task $Task -ImpactReportPath $impactJson -JsonOutputPath $taskJson -MarkdownOutputPath $taskMd | Out-Null
-    Write-Event -Role "intake" -Status "completed" -Message "Impact and task intake reports generated." -Artifact @($impactJson, $taskJson)
+    $lane = Get-Content -LiteralPath $laneJson -Raw | ConvertFrom-Json
+    Write-Event -Role "intake" -Status "completed" -Message "Impact, lane, and task intake reports generated. Lane: $($lane.lane)." -Artifact @($impactJson, $laneJson, $taskJson)
 
     $impact = Get-Content -LiteralPath $impactJson -Raw | ConvertFrom-Json
     $taskReport = Get-Content -LiteralPath $taskJson -Raw | ConvertFrom-Json
@@ -106,6 +112,7 @@ try {
         "- Changed areas: $(@($impact.changedAreas) -join ', ')",
         "- Complexity: $($impact.complexity)",
         "- Risk score: $($impact.riskScore)",
+        "- Execution lane: $($lane.lane) ($($lane.title))",
         "- Acceptance criteria:",
         "  - Change remains scoped to the requested target.",
         "  - Validation plan is run or skip is justified.",
@@ -121,6 +128,8 @@ try {
         "- Primary stack: $($profile.primaryStack)",
         "- Architecture areas touched: $(@($impact.changedAreas) -join ', ')",
         "- Risk signals: $(@($impact.riskSignals) -join ', ')",
+        "- Execution lane: $($lane.lane)",
+        "- Lane requires validation execution: $($lane.requireValidationExecution)",
         "- Human approval required: $($impact.requiresHumanApproval)",
         "- Integration readiness: $($integrations.decision)",
         "- Enabled integrations: $($integrations.enabledIntegrations)",
@@ -204,6 +213,12 @@ try {
     $bundleStatus = if ([bool]$bundle.passed) { "completed" } else { "blocked" }
     Write-Event -Role "evidence" -Status $bundleStatus -Message "Evidence bundle decision: $($bundle.decision)." -Artifact @($bundleJson)
 
+    Write-Event -Role "evidence" -Status "running" -Message "Verifying SDLC compliance verdict for the selected lane."
+    & "$PSScriptRoot/verify-sdlc-compliance.ps1" -Root $rootPath -ReportDirectory $reportRoot -JsonOutputPath $complianceJson -MarkdownOutputPath $complianceMd -AllowReviewRequired | Out-Null
+    $compliance = Get-Content -LiteralPath $complianceJson -Raw | ConvertFrom-Json
+    $complianceStatus = if ($compliance.decision -eq "blocked") { "blocked" } elseif ($compliance.decision -eq "proceed") { "completed" } else { "waiting" }
+    Write-Event -Role "evidence" -Status $complianceStatus -Message "Compliance decision: $($compliance.decision)." -Artifact @($complianceJson)
+
     $summary = [ordered]@{
         schemaVersion = 1
         generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
@@ -215,8 +230,11 @@ try {
         changedAreas = @($impact.changedAreas)
         complexity = $impact.complexity
         riskScore = $impact.riskScore
+        lane = $lane.lane
+        laneTitle = $lane.title
         requiresHumanApproval = [bool]$impact.requiresHumanApproval
         validationPassed = [bool]$validation.passed
+        validationSkipped = [bool]$validation.skipped
         safeChangePassed = [bool]$safeChange.passed
         safeChangeDecision = $safeChange.decision
         contextMemoryDecision = $contextMemory.decision
@@ -224,8 +242,11 @@ try {
         tokenUsageDecision = $tokenUsage.decision
         estimatedTokens = $tokenUsage.estimatedTokens
         evidenceDecision = $bundle.decision
+        complianceDecision = $compliance.decision
+        compliancePassed = [bool]$compliance.passed
         reports = [ordered]@{
             impact = $impactJson
+            lane = $laneJson
             taskIntake = $taskJson
             contextMemory = $contextJson
             integrations = $integrationsJson
@@ -236,14 +257,19 @@ try {
             safeChange = $safeJson
             tokenUsage = $tokenJson
             evidenceBundle = $bundleJson
+            compliance = $complianceJson
         }
     }
 
     $summaryPath = Join-Path $reportRoot "sdlc-summary.json"
     $summary | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $summaryPath
-    Write-Event -Role "done" -Status "completed" -Message "SDLC orchestration finished. Decision: $($bundle.decision)." -Artifact @($summaryPath)
+    $doneStatus = if ($compliance.decision -eq "blocked") { "blocked" } else { "completed" }
+    Write-Event -Role "done" -Status $doneStatus -Message "SDLC orchestration finished. Compliance decision: $($compliance.decision)." -Artifact @($summaryPath)
 
     if ($Pretty) { $summary | ConvertTo-Json -Depth 12 } else { Get-Content -LiteralPath $summaryPath -Raw }
+    if ($compliance.decision -eq "blocked") {
+        exit 1
+    }
 } catch {
     Write-Event -Role "done" -Status "failed" -Message $_.Exception.Message
     throw

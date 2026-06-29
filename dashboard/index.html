@@ -37,6 +37,14 @@
         <span class="label">Updated</span>
         <strong id="updatedAt">-</strong>
       </article>
+      <article class="summary-card">
+        <span class="label">Lane</span>
+        <strong id="laneName">-</strong>
+      </article>
+      <article class="summary-card">
+        <span class="label">Compliance</span>
+        <strong id="complianceDecision">-</strong>
+      </article>
     </section>
 
     <section>
@@ -44,7 +52,21 @@
         <h2>Framework Config</h2>
         <span id="frameworkStatus" class="muted">Loading</span>
       </div>
-      <div class="three-column">
+      <div class="four-column">
+        <div>
+          <div class="section-title compact">
+            <h3>Execution Lane</h3>
+            <span id="laneDecision" class="muted">No report</span>
+          </div>
+          <div id="lanePanel" class="panel"></div>
+        </div>
+        <div>
+          <div class="section-title compact">
+            <h3>Compliance</h3>
+            <span id="compliancePanelDecision" class="muted">No report</span>
+          </div>
+          <div id="compliancePanel" class="panel"></div>
+        </div>
         <div>
           <div class="section-title compact">
             <h3>Token Budget</h3>
@@ -59,12 +81,21 @@
           </div>
           <div id="contextPanel" class="panel"></div>
         </div>
+      </div>
+      <div class="two-column secondary-config">
         <div>
           <div class="section-title compact">
             <h3>Integrations</h3>
             <span id="integrationsDecision" class="muted">No report</span>
           </div>
           <div id="integrationsPanel" class="panel"></div>
+        </div>
+        <div>
+          <div class="section-title compact">
+            <h3>Context Memory Detail</h3>
+            <span class="muted">Provider readiness</span>
+          </div>
+          <div id="contextDetailPanel" class="panel"></div>
         </div>
       </div>
     </section>

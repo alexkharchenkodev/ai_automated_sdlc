@@ -1,0 +1,58 @@
+schema_version: 1
+
+# Execution lanes keep the framework useful without forcing heavy process on every small task.
+# The portable scripts include the same defaults, so this file is safe to tune gradually.
+
+lanes:
+  fast:
+    title: Fast Lane
+    max_risk_score: 2
+    require_human_approval: false
+    require_validation_execution: false
+    skipped_validation_decision: review_required
+    purpose: Small scoped changes with low blast radius.
+    required_reports:
+      - sdlc-impact-report.json
+      - sdlc-task-intake-report.json
+      - sdlc-validation-plan.json
+      - sdlc-selected-validation-report.json
+      - sdlc-safe-change-report.json
+      - sdlc-evidence-bundle.json
+  standard:
+    title: Standard Lane
+    max_risk_score: 6
+    require_human_approval: false
+    require_validation_execution: false
+    skipped_validation_decision: review_required
+    purpose: Normal feature and bug-fix work where evidence should be complete.
+    required_reports:
+      - sdlc-impact-report.json
+      - sdlc-task-intake-report.json
+      - sdlc-context-memory-report.json
+      - sdlc-integrations-report.json
+      - sdlc-impacted-tests.json
+      - sdlc-rollback-plan.json
+      - sdlc-validation-plan.json
+      - sdlc-selected-validation-report.json
+      - sdlc-safe-change-report.json
+      - sdlc-token-usage-report.json
+      - sdlc-evidence-bundle.json
+  strict:
+    title: Strict Lane
+    max_risk_score: 10
+    require_human_approval: true
+    require_validation_execution: true
+    skipped_validation_decision: blocked
+    purpose: High-risk, security-sensitive, schema/API, CI, dependency, or broad changes.
+    required_reports:
+      - sdlc-impact-report.json
+      - sdlc-task-intake-report.json
+      - sdlc-context-memory-report.json
+      - sdlc-integrations-report.json
+      - sdlc-impacted-tests.json
+      - sdlc-rollback-plan.json
+      - sdlc-validation-plan.json
+      - sdlc-selected-validation-report.json
+      - sdlc-safe-change-report.json
+      - sdlc-token-usage-report.json
+      - sdlc-evidence-bundle.json

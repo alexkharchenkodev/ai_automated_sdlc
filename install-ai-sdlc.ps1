@@ -103,6 +103,7 @@ function Write-InstallManifest {
             "tools/ai-sdlc/config/context_memory.yaml",
             "tools/ai-sdlc/config/integrations.yaml",
             "tools/ai-sdlc/config/token_budget.yaml",
+            "tools/ai-sdlc/config/execution_lanes.yaml",
             "tools/ai-sdlc/config/mcp_servers.example.yaml"
         )
         generatedDirectories = @(
@@ -177,7 +178,7 @@ $summary = [ordered]@{
     force = [bool]$Force
     nextSteps = @(
         "Edit tools/ai-sdlc/config/project-profile.yaml for the target repository.",
-        "Edit tools/ai-sdlc/config/context_memory.yaml, integrations.yaml, and token_budget.yaml.",
+        "Edit tools/ai-sdlc/config/context_memory.yaml, integrations.yaml, token_budget.yaml, and execution_lanes.yaml.",
         "Read AGENTS.md and docs/SDLC/README.md before starting AI-assisted work.",
         "Run tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.ps1 to generate fresh SDLC evidence.",
         "Run tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.ps1 -OpenDashboard to view live role progress.",

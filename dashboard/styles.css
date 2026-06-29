@@ -96,7 +96,7 @@ main {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
   margin-bottom: 28px;
 }
@@ -273,6 +273,16 @@ main {
   gap: 18px;
 }
 
+.four-column {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.secondary-config {
+  margin-top: 18px;
+}
+
 .panel {
   padding: 14px;
   min-height: 140px;
@@ -425,7 +435,8 @@ code {
 @media (max-width: 920px) {
   .topbar,
   .two-column,
-  .three-column {
+  .three-column,
+  .four-column {
     display: block;
   }
 

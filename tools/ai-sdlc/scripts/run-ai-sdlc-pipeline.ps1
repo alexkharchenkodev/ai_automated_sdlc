@@ -21,6 +21,8 @@ if (-not (Test-Path -LiteralPath $reportRoot)) {
 
 $impactJson = Join-Path $reportRoot "sdlc-impact-report.json"
 $impactMd = Join-Path $reportRoot "sdlc-impact-report.md"
+$laneJson = Join-Path $reportRoot "sdlc-lane-report.json"
+$laneMd = Join-Path $reportRoot "sdlc-lane-report.md"
 $taskJson = Join-Path $reportRoot "sdlc-task-intake-report.json"
 $taskMd = Join-Path $reportRoot "sdlc-task-intake-report.md"
 $contextJson = Join-Path $reportRoot "sdlc-context-memory-report.json"
@@ -41,8 +43,11 @@ $tokenJson = Join-Path $reportRoot "sdlc-token-usage-report.json"
 $tokenMd = Join-Path $reportRoot "sdlc-token-usage-report.md"
 $bundleJson = Join-Path $reportRoot "sdlc-evidence-bundle.json"
 $bundleMd = Join-Path $reportRoot "sdlc-evidence-bundle.md"
+$complianceJson = Join-Path $reportRoot "sdlc-compliance-report.json"
+$complianceMd = Join-Path $reportRoot "sdlc-compliance-report.md"
 
 & "$PSScriptRoot/analyze-impact.ps1" -Root $rootPath -ChangedFile $ChangedFile -ChangedFilesPath $ChangedFilesPath -JsonOutputPath $impactJson -MarkdownOutputPath $impactMd | Out-Null
+& "$PSScriptRoot/select-sdlc-lane.ps1" -Root $rootPath -ImpactReportPath $impactJson -JsonOutputPath $laneJson -MarkdownOutputPath $laneMd | Out-Null
 & "$PSScriptRoot/write-task-intake-report.ps1" -Root $rootPath -Task $Task -ImpactReportPath $impactJson -JsonOutputPath $taskJson -MarkdownOutputPath $taskMd | Out-Null
 & "$PSScriptRoot/write-context-memory-report.ps1" -Root $rootPath -JsonOutputPath $contextJson -MarkdownOutputPath $contextMd | Out-Null
 & "$PSScriptRoot/check-integrations.ps1" -Root $rootPath -JsonOutputPath $integrationsJson -MarkdownOutputPath $integrationsMd | Out-Null
@@ -53,14 +58,17 @@ $bundleMd = Join-Path $reportRoot "sdlc-evidence-bundle.md"
 & "$PSScriptRoot/validate-safe-change.ps1" -Root $rootPath -ReportDirectory $reportRoot -JsonOutputPath $safeJson -MarkdownOutputPath $safeMd | Out-Null
 & "$PSScriptRoot/estimate-token-usage.ps1" -Root $rootPath -ImpactReportPath $impactJson -ReportDirectory $reportRoot -JsonOutputPath $tokenJson -MarkdownOutputPath $tokenMd | Out-Null
 & "$PSScriptRoot/write-evidence-bundle.ps1" -Root $rootPath -ReportDirectory $reportRoot -JsonOutputPath $bundleJson -MarkdownOutputPath $bundleMd | Out-Null
+& "$PSScriptRoot/verify-sdlc-compliance.ps1" -Root $rootPath -ReportDirectory $reportRoot -JsonOutputPath $complianceJson -MarkdownOutputPath $complianceMd -AllowReviewRequired | Out-Null
 
 $impact = Get-Content -LiteralPath $impactJson -Raw | ConvertFrom-Json
+$lane = Get-Content -LiteralPath $laneJson -Raw | ConvertFrom-Json
 $validation = Get-Content -LiteralPath $validationJson -Raw | ConvertFrom-Json
 $safeChange = Get-Content -LiteralPath $safeJson -Raw | ConvertFrom-Json
 $contextMemory = Get-Content -LiteralPath $contextJson -Raw | ConvertFrom-Json
 $integrations = Get-Content -LiteralPath $integrationsJson -Raw | ConvertFrom-Json
 $tokenUsage = Get-Content -LiteralPath $tokenJson -Raw | ConvertFrom-Json
 $bundle = Get-Content -LiteralPath $bundleJson -Raw | ConvertFrom-Json
+$compliance = Get-Content -LiteralPath $complianceJson -Raw | ConvertFrom-Json
 
 $summary = [ordered]@{
     schemaVersion = 1
@@ -70,8 +78,11 @@ $summary = [ordered]@{
     changedAreas = @($impact.changedAreas)
     complexity = $impact.complexity
     riskScore = $impact.riskScore
+    lane = $lane.lane
+    laneTitle = $lane.title
     requiresHumanApproval = [bool]$impact.requiresHumanApproval
     validationPassed = [bool]$validation.passed
+    validationSkipped = [bool]$validation.skipped
     safeChangePassed = [bool]$safeChange.passed
     safeChangeDecision = $safeChange.decision
     contextMemoryDecision = $contextMemory.decision
@@ -79,8 +90,11 @@ $summary = [ordered]@{
     tokenUsageDecision = $tokenUsage.decision
     estimatedTokens = $tokenUsage.estimatedTokens
     evidenceDecision = $bundle.decision
+    complianceDecision = $compliance.decision
+    compliancePassed = [bool]$compliance.passed
     reports = [ordered]@{
         impact = $impactJson
+        lane = $laneJson
         taskIntake = $taskJson
         contextMemory = $contextJson
         integrations = $integrationsJson
@@ -91,6 +105,7 @@ $summary = [ordered]@{
         safeChange = $safeJson
         tokenUsage = $tokenJson
         evidenceBundle = $bundleJson
+        compliance = $complianceJson
     }
 }
 
@@ -101,4 +116,8 @@ if ($Pretty) {
     $summary | ConvertTo-Json -Depth 12
 } else {
     Get-Content -LiteralPath $summaryPath -Raw
+}
+
+if ($compliance.decision -eq "blocked") {
+    exit 1
 }

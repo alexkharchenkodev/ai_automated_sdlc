@@ -91,7 +91,6 @@ function New-DashboardHtml {
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="2">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI SDLC Live Dashboard</title>
   <style>
@@ -135,7 +134,7 @@ function New-DashboardHtml {
       <span>Active role: $active</span>
       <span>Decision: $decision</span>
       <span>Updated: $generated</span>
-      <span>Auto-refresh: 2s</span>
+      <span>Static fallback dashboard</span>
     </div>
   </header>
   <main>
@@ -192,7 +191,8 @@ $event = [ordered]@{
     artifacts = @($Artifact)
 }
 
-($event | ConvertTo-Json -Depth 8 -Compress) | Add-Content -LiteralPath $eventsPath
+$eventLine = ($event | ConvertTo-Json -Depth 8 -Compress)
+[System.IO.File]::AppendAllText($eventsPath, $eventLine + [Environment]::NewLine, [System.Text.Encoding]::UTF8)
 
 $roleFlow = Get-AiSdlcRoleFlow -Root $rootPath
 $events = [System.Collections.Generic.List[object]]::new()
@@ -252,12 +252,16 @@ $state | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $statePath
 
 $reportRoot = Join-Path $rootPath ".sdlc/local-pipeline"
 $summaryPath = Join-Path $reportRoot "sdlc-summary.json"
+$lanePath = Join-Path $reportRoot "sdlc-lane-report.json"
 $safeChangePath = Join-Path $reportRoot "sdlc-safe-change-report.json"
+$compliancePath = Join-Path $reportRoot "sdlc-compliance-report.json"
 $contextPath = Join-Path $reportRoot "sdlc-context-memory-report.json"
 $integrationsPath = Join-Path $reportRoot "sdlc-integrations-report.json"
 $tokenPath = Join-Path $reportRoot "sdlc-token-usage-report.json"
 $summary = if (Test-Path -LiteralPath $summaryPath) { Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json } else { $null }
+$lane = if (Test-Path -LiteralPath $lanePath) { Get-Content -LiteralPath $lanePath -Raw | ConvertFrom-Json } else { $null }
 $safeChange = if (Test-Path -LiteralPath $safeChangePath) { Get-Content -LiteralPath $safeChangePath -Raw | ConvertFrom-Json } else { $null }
+$compliance = if (Test-Path -LiteralPath $compliancePath) { Get-Content -LiteralPath $compliancePath -Raw | ConvertFrom-Json } else { $null }
 $contextMemory = if (Test-Path -LiteralPath $contextPath) { Get-Content -LiteralPath $contextPath -Raw | ConvertFrom-Json } else { $null }
 $integrations = if (Test-Path -LiteralPath $integrationsPath) { Get-Content -LiteralPath $integrationsPath -Raw | ConvertFrom-Json } else { $null }
 $tokenUsage = if (Test-Path -LiteralPath $tokenPath) { Get-Content -LiteralPath $tokenPath -Raw | ConvertFrom-Json } else { $null }
@@ -267,7 +271,8 @@ $dashboardConfigFiles = @(
     "tools/ai-sdlc/config/integrations.yaml",
     "tools/ai-sdlc/config/token_budget.yaml",
     "tools/ai-sdlc/config/role_flow.yaml",
-    "tools/ai-sdlc/config/safety_gates.yaml"
+    "tools/ai-sdlc/config/safety_gates.yaml",
+    "tools/ai-sdlc/config/execution_lanes.yaml"
 )
 $dashboardConfig = [pscustomobject]@{
     schemaVersion = 1
@@ -279,7 +284,9 @@ $runtimeLines = [System.Collections.Generic.List[string]]::new()
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_STATE" -Value $state))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_EVENTS" -Value @($events)))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_SUMMARY" -Value $summary))
+$runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_LANE" -Value $lane))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_SAFETY" -Value $safeChange))
+$runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_COMPLIANCE" -Value $compliance))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_CONTEXT_MEMORY" -Value $contextMemory))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_INTEGRATIONS" -Value $integrations))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_TOKEN_USAGE" -Value $tokenUsage))

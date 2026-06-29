@@ -7,6 +7,7 @@ The portable pipeline turns a changed-file list into local SDLC evidence.
 ```text
 changed files
   -> impact report
+  -> execution lane report
   -> task intake report
   -> context memory report
   -> integrations readiness report
@@ -14,6 +15,7 @@ changed files
   -> selected validation report
   -> token usage estimate
   -> evidence bundle
+  -> compliance report
   -> summary
 ```
 
@@ -59,6 +61,7 @@ Then edit `tools/ai-sdlc/config/project-profile.yaml` with the real build, test,
 Reports are written under `.sdlc/local-pipeline/` by default:
 
 - `sdlc-impact-report.json`
+- `sdlc-lane-report.json`
 - `sdlc-task-intake-report.json`
 - `sdlc-context-memory-report.json`
 - `sdlc-integrations-report.json`
@@ -69,6 +72,19 @@ Reports are written under `.sdlc/local-pipeline/` by default:
 - `sdlc-safe-change-report.json`
 - `sdlc-token-usage-report.json`
 - `sdlc-evidence-bundle.json`
+- `sdlc-compliance-report.json`
 - `sdlc-summary.json`
 
 Generated reports should normally be reviewed locally and archived intentionally. Do not copy reports from another project.
+
+## Compliance Check
+
+After a run, verify the final SDLC verdict:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\verify-sdlc-compliance.ps1 -ReportDirectory .sdlc/local-pipeline -Pretty
+```
+
+The verifier exits non-zero for `blocked` and, by default, for `review_required`.
+Use `-AllowReviewRequired` only when a bootstrap or advisory CI mode should fail
+on hard blockers but still allow review-required evidence to be uploaded.

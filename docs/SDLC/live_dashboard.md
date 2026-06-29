@@ -1,6 +1,6 @@
 # Live Role Dashboard
 
-The portable AI SDLC dashboard visualizes which role is active, what it is doing, and which artifacts have been produced.
+The portable AI SDLC dashboard visualizes which role is active, what it is doing, which execution lane is selected, whether compliance passed, and which artifacts have been produced.
 It also exposes a `Config` modal and a `Project Memory` section for ADR, RAG, GraphRAG, and code-search readiness.
 
 ## Files
@@ -10,7 +10,7 @@ Runtime files are generated under `.sdlc/live/`:
 - `events.jsonl`: append-only role event log
 - `state.json`: latest role state
 - `dashboard/index.html`: local dashboard shell
-- `dashboard/runtime-state.js`: browser-readable snapshot of state, events, profile, summary, safety, context memory, integrations, and token report
+- `dashboard/runtime-state.js`: browser-readable snapshot of state, events, profile, summary, lane, compliance, safety, context memory, integrations, and token report
 - `dashboard/app.js`: local UI for role flow, config summary, project memory, artifacts, event logs, and async state polling
 
 These are generated evidence files. Do not copy them from another project.

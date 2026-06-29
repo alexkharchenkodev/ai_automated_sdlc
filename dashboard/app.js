@@ -25,6 +25,8 @@
       state,
       events: window.AI_SDLC_EVENTS || [],
       safety: window.AI_SDLC_SAFETY || null,
+      lane: window.AI_SDLC_LANE || null,
+      compliance: window.AI_SDLC_COMPLIANCE || null,
       contextMemory: window.AI_SDLC_CONTEXT_MEMORY || null,
       integrations: window.AI_SDLC_INTEGRATIONS || null,
       tokenUsage: window.AI_SDLC_TOKEN_USAGE || null,
@@ -113,7 +115,9 @@
         decision: tokenUsage.decision,
         estimatedTokens: tokenUsage.estimatedTokens,
         thresholds: tokenUsage.thresholds
-      } : "not generated"
+      } : "not generated",
+      lane: getData().lane || "not generated",
+      compliance: getData().compliance || "not generated"
     };
 
     byId("configModalBody").innerHTML = `
@@ -147,6 +151,8 @@
       state,
       events,
       safety,
+      lane,
+      compliance,
       contextMemory,
       integrations,
       tokenUsage,
@@ -158,16 +164,47 @@
     byId("activeRole").textContent = text(state.activeRole);
     byId("projectName").textContent = text(profile.projectName || profile.name || state.projectName || "Unknown");
     byId("updatedAt").textContent = text(state.updatedAtUtc);
+    byId("laneName").textContent = text((lane && lane.lane) || (summary && summary.lane));
+    byId("complianceDecision").textContent = text((compliance && compliance.decision) || (summary && summary.complianceDecision), "review");
     byId("decisionBadge").textContent = text(state.decision, "review");
     byId("decisionBadge").className = `badge status-${text(state.decision, "review")}`;
 
-    const configReportsLoaded = [tokenUsage, contextMemory, integrations].filter(Boolean).length;
-    byId("frameworkStatus").textContent = `${configReportsLoaded}/3 reports loaded`;
+    const configReportsLoaded = [lane, compliance, tokenUsage, contextMemory, integrations].filter(Boolean).length;
+    byId("frameworkStatus").textContent = `${configReportsLoaded}/5 reports loaded`;
 
     byId("memoryStatus").textContent = contextMemory
       ? `${contextMemory.enabledProviders || 0} providers enabled`
       : "No context report loaded";
     renderMemoryTab(contextMemory, currentMemoryTab);
+
+    if (lane) {
+      byId("laneDecision").innerHTML = badge(lane.decision || "selected");
+      byId("lanePanel").innerHTML = [
+        metric("Lane", `${lane.lane || "-"} (${lane.title || "-"})`),
+        metric("Risk score", lane.riskScore ?? "-"),
+        metric("Review tier", lane.reviewTier || "-"),
+        metric("Validation required", lane.requireValidationExecution),
+        metric("Approval required", lane.requireHumanApproval)
+      ].join("");
+    } else {
+      byId("lanePanel").innerHTML = `<p class="muted">No execution lane has been selected yet.</p>`;
+    }
+
+    if (compliance) {
+      byId("compliancePanelDecision").innerHTML = badge(compliance.decision || "review_required");
+      const blockers = Array.isArray(compliance.blockers) ? compliance.blockers : [];
+      const warnings = Array.isArray(compliance.warnings) ? compliance.warnings : [];
+      byId("compliancePanel").innerHTML = `
+        ${metric("Passed", compliance.passed)}
+        ${metric("Blockers", blockers.length)}
+        ${metric("Warnings", warnings.length)}
+        <ul class="safety-list">
+          ${blockers.slice(0, 4).map((item) => `<li>${escapeHtml(item.code || item.message || item)}</li>`).join("") || warnings.slice(0, 4).map((item) => `<li>${escapeHtml(item.code || item.message || item)}</li>`).join("") || "<li class=\"muted\">No compliance findings</li>"}
+        </ul>
+      `;
+    } else {
+      byId("compliancePanel").innerHTML = `<p class="muted">No compliance report has been generated yet.</p>`;
+    }
 
     if (tokenUsage) {
       byId("tokenDecision").innerHTML = badge(tokenUsage.decision || "review");
@@ -193,8 +230,10 @@
           ${providers.map((provider) => `<li>${escapeHtml(provider.name)}: ${escapeHtml(provider.enabled ? "on" : "off")} / ${escapeHtml(provider.mode || "-")}</li>`).join("") || "<li class=\"muted\">No providers configured</li>"}
         </ul>
       `;
+      byId("contextDetailPanel").innerHTML = byId("contextPanel").innerHTML;
     } else {
       byId("contextPanel").innerHTML = `<p class="muted">No context memory report has been generated yet.</p>`;
+      byId("contextDetailPanel").innerHTML = `<p class="muted">No context memory report has been generated yet.</p>`;
     }
 
     if (integrations) {

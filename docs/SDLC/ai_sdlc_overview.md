@@ -2,6 +2,8 @@
 
 AI work must move through a controlled lifecycle with explicit artifacts, validation, review, traceability, and human gates.
 
+This framework is not just a collection of agent rules. Rules describe expected behavior; AI SDLC evidence proves what actually happened and whether the result can proceed.
+
 ## Operating Model
 
 Default local execution uses one accountable AI coding session as the Lead Orchestrator. The AI applies BA, design, engineering, QA, review, release, and SDLC lenses inside one workflow unless the user explicitly asks for delegation.
@@ -26,6 +28,8 @@ Request or ticket
 - No lifecycle transition happens without the required artifact.
 - No merge or release happens without validation evidence.
 - High-risk changes require reviewer or human escalation.
+- Risk determines the execution lane: `fast`, `standard`, or `strict`.
+- CI and reviewers consume the compliance verdict: `proceed`, `review_required`, or `blocked`.
 - Human approval is required for destructive, security-sensitive, schema/data-contract, release, paid-service, and ambiguous product decisions.
 - Generated evidence belongs to the target repo and should not be copied from another project.
 
@@ -41,3 +45,5 @@ Request or ticket
 - Manual QA report when needed.
 - Release note.
 - Traceability record.
+- Execution lane report.
+- Compliance report.

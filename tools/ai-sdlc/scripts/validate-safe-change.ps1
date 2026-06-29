@@ -27,21 +27,27 @@ $blockers = [System.Collections.Generic.List[object]]::new()
 $warnings = [System.Collections.Generic.List[object]]::new()
 
 $impactPath = Join-Path $reportRoot "sdlc-impact-report.json"
+$lanePath = Join-Path $reportRoot "sdlc-lane-report.json"
 $validationPath = Join-Path $reportRoot "sdlc-selected-validation-report.json"
 $rollbackPath = Join-Path $reportRoot "sdlc-rollback-plan.json"
 
-foreach ($required in @("sdlc-impact-report.json", "sdlc-task-intake-report.json", "sdlc-validation-plan.json", "sdlc-selected-validation-report.json", "sdlc-rollback-plan.json")) {
+foreach ($required in @("sdlc-impact-report.json", "sdlc-lane-report.json", "sdlc-task-intake-report.json", "sdlc-validation-plan.json", "sdlc-selected-validation-report.json", "sdlc-rollback-plan.json")) {
     if (-not (Test-Path -LiteralPath (Join-Path $reportRoot $required))) {
         Add-Finding -List $blockers -Code "missing_report" -Message "Missing required report: $required"
     }
 }
 
 $impact = if (Test-Path -LiteralPath $impactPath) { Get-Content -LiteralPath $impactPath -Raw | ConvertFrom-Json } else { $null }
+$lane = if (Test-Path -LiteralPath $lanePath) { Get-Content -LiteralPath $lanePath -Raw | ConvertFrom-Json } else { $null }
 $validation = if (Test-Path -LiteralPath $validationPath) { Get-Content -LiteralPath $validationPath -Raw | ConvertFrom-Json } else { $null }
 $rollback = if (Test-Path -LiteralPath $rollbackPath) { Get-Content -LiteralPath $rollbackPath -Raw | ConvertFrom-Json } else { $null }
 
 if ($validation -and -not [bool]$validation.passed) {
     Add-Finding -List $blockers -Code "validation_failed" -Message "Selected validation did not pass."
+}
+
+if ($lane -and $validation -and [bool]$lane.requireValidationExecution -and [bool]$validation.skipped) {
+    Add-Finding -List $blockers -Code "lane_requires_validation_execution" -Message "Selected lane '$($lane.lane)' requires real validation execution."
 }
 
 if ($impact) {
@@ -84,11 +90,13 @@ $result = [ordered]@{
     decision = if ($passed) { "proceed" } else { "blocked" }
     blockers = @($blockers)
     warnings = @($warnings)
+    lane = if ($lane) { $lane.lane } else { "unknown" }
 }
 
 $lines = @(
     "- Passed: $passed",
     "- Decision: $($result.decision)",
+    "- Lane: $($result.lane)",
     "- Blockers: $($blockers.Count)",
     "- Warnings: $($warnings.Count)"
 )
