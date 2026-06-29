@@ -135,7 +135,8 @@ if (Test-Path -LiteralPath $manifest) {
         ".sdlc/approval-gates",
         ".sdlc/memory-index",
         ".sdlc/memory-lifecycle",
-        ".sdlc/executor"
+        ".sdlc/executor",
+        ".sdlc/decomposition"
     )
 } else {
     $result = [ordered]@{

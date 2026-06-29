@@ -105,7 +105,8 @@ function Write-InstallManifest {
             "tools/ai-sdlc/config/token_budget.yaml",
             "tools/ai-sdlc/config/execution_lanes.yaml",
             "tools/ai-sdlc/config/mcp_servers.example.yaml",
-            "tools/ai-sdlc/config/role_executors.yaml"
+            "tools/ai-sdlc/config/role_executors.yaml",
+            "tools/ai-sdlc/config/task_decomposition.yaml"
         )
         generatedDirectories = @(
             ".sdlc/local-pipeline",
@@ -118,7 +119,8 @@ function Write-InstallManifest {
             ".sdlc/approval-gates",
             ".sdlc/memory-index",
             ".sdlc/memory-lifecycle",
-            ".sdlc/executor"
+            ".sdlc/executor",
+            ".sdlc/decomposition"
         )
     }
 

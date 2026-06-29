@@ -201,6 +201,12 @@ Create a task contract:
 powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" new-task -Title "Add checkout flow" -Pretty
 ```
 
+For a complex app, multi-screen workflow, or broad feature set, decompose the parent task before implementation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" decompose -TaskContractPath ".sdlc/task-contracts/example.json" -Pretty
+```
+
 Process queued contracts with handoff, reopen, approval, memory, and evidence checks:
 
 ```powershell

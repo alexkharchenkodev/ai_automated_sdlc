@@ -10,6 +10,8 @@ It does not hard-code Codex, Claude, Copilot, Cursor, Jira, or any vendor. Inste
 
 ## Modes
 
+Before any role execution, the executor verifies task decomposition. If a task looks like a whole app, multi-screen workflow, or broad feature set, BA must decompose it into child task contracts. The executor will wait instead of allowing one large implementation pass.
+
 `work_order`
 
 Creates role work orders and marks the task as waiting. Use this when a human, Codex session, Copilot chat, Claude session, or external worker will read the work order and submit artifacts later.

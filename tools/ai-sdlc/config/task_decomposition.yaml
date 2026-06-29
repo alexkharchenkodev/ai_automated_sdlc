@@ -1,0 +1,47 @@
+schema_version: 1
+
+settings:
+  require_decomposition_for_complex_tasks: true
+  min_acceptance_criteria_for_complexity: 5
+  min_detected_slices_for_complexity: 3
+  block_complex_single_task_execution: true
+
+complexity_keywords:
+  - app
+  - application
+  - mobile
+  - screen
+  - screens
+  - flow
+  - login
+  - register
+  - profile
+  - admin
+  - events
+  - details
+  - scoreboard
+  - dashboard
+  - tabs
+  - role
+  - validation
+
+default_slices:
+  - id: discovery
+    title: Discovery, task map, and architecture boundaries
+  - id: splash_session
+    title: Splash screen and session routing
+  - id: auth
+    title: Login, registration, guest access, and auth errors
+  - id: home_shell
+    title: Home shell, tabs, and role-based navigation
+  - id: events
+    title: Events list and event discovery
+  - id: event_detail
+    title: Event detail, registration, and scoreboard
+  - id: profile
+    title: Profile editing and logout
+  - id: admin
+    title: Admin role actions and contextual menus
+  - id: validation
+    title: Validation, review, and evidence bundle
+

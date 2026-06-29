@@ -89,7 +89,7 @@ done < "$tmp_files"
 
 removed_generated=""
 if [ "$include_generated" = "true" ]; then
-  for dir in .sdlc/local-pipeline .sdlc/live .sdlc/approvals .sdlc/task-contracts .sdlc/task-queue .sdlc/handoffs .sdlc/reopen-policy .sdlc/approval-gates .sdlc/memory-index .sdlc/memory-lifecycle .sdlc/executor; do
+  for dir in .sdlc/local-pipeline .sdlc/live .sdlc/approvals .sdlc/task-contracts .sdlc/task-queue .sdlc/handoffs .sdlc/reopen-policy .sdlc/approval-gates .sdlc/memory-index .sdlc/memory-lifecycle .sdlc/executor .sdlc/decomposition; do
     if [ -e "$target_dir/$dir" ]; then
       [ "$dry_run" = "true" ] || rm -rf "$target_dir/$dir"
       removed_generated="$removed_generated $dir"

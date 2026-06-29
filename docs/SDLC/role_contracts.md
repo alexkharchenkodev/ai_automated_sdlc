@@ -15,6 +15,10 @@ Outputs:
 - protected surfaces and non-goals
 - edge cases
 - open questions
+- task decomposition for complex requests
+- child task contracts for screens, flows, feature slices, validation, and evidence
+
+BA must not pass a complex app, multi-screen workflow, or broad feature set to Engineering as one implementation task. It must create an executable task tree first.
 
 ## Design
 

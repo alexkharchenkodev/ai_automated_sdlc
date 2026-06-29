@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("doctor", "dashboard", "new-task", "queue", "executor", "submit-artifact", "handoff", "reopen-policy", "approval", "memory", "evidence", "pipeline", "orchestrator")]
+    [ValidateSet("doctor", "dashboard", "new-task", "decompose", "queue", "executor", "submit-artifact", "handoff", "reopen-policy", "approval", "memory", "evidence", "pipeline", "orchestrator")]
     [string] $Command,
     [string] $Root = ".",
     [string] $TaskContractPath = "",
@@ -64,6 +64,12 @@ switch ($Command) {
         if ($SkipApprovalGates) { $parameters.SkipApprovalGates = $true }
         if ($Pretty) { $parameters.Pretty = $true }
         Invoke-AiSdlcScript -ScriptPath "$PSScriptRoot/run-ai-sdlc-task-queue.ps1" -Parameters $parameters
+    }
+    "decompose" {
+        if (-not $TaskContractPath) { throw "-TaskContractPath is required for decompose." }
+        $parameters = @{ Root = $Root; TaskContractPath = $TaskContractPath; EmitEvent = $true }
+        if ($Pretty) { $parameters.Pretty = $true }
+        Invoke-AiSdlcScript -ScriptPath "$PSScriptRoot/write-task-decomposition.ps1" -Parameters $parameters
     }
     "executor" {
         $parameters = @{ Root = $Root }

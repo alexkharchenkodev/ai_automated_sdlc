@@ -41,6 +41,25 @@ function ConvertTo-JsAssignment {
     return "window.$GlobalName = $json;"
 }
 
+function Set-AiSdlcContentWithRetry {
+    param(
+        [string] $Path,
+        [object] $Value,
+        [int] $Retries = 8,
+        [int] $DelayMilliseconds = 120
+    )
+
+    for ($attempt = 1; $attempt -le $Retries; $attempt += 1) {
+        try {
+            Set-Content -LiteralPath $Path -Value $Value
+            return
+        } catch {
+            if ($attempt -eq $Retries) { throw }
+            Start-Sleep -Milliseconds $DelayMilliseconds
+        }
+    }
+}
+
 function Read-DashboardConfigFile {
     param(
         [string] $RootPath,
@@ -610,7 +629,7 @@ $state = [ordered]@{
     roles = @($roles)
 }
 
-$state | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $statePath
+Set-AiSdlcContentWithRetry -Path $statePath -Value ($state | ConvertTo-Json -Depth 12)
 
 $reportRoot = Join-Path $rootPath ".sdlc/local-pipeline"
 $summaryPath = Join-Path $reportRoot "sdlc-summary.json"
@@ -637,7 +656,12 @@ $dashboardConfigFiles = @(
     "tools/ai-sdlc/config/token_budget.yaml",
     "tools/ai-sdlc/config/role_flow.yaml",
     "tools/ai-sdlc/config/safety_gates.yaml",
-    "tools/ai-sdlc/config/execution_lanes.yaml"
+    "tools/ai-sdlc/config/execution_lanes.yaml",
+    "tools/ai-sdlc/config/handoff_gates.yaml",
+    "tools/ai-sdlc/config/reopen_policy.yaml",
+    "tools/ai-sdlc/config/approval_gates.yaml",
+    "tools/ai-sdlc/config/role_executors.yaml",
+    "tools/ai-sdlc/config/task_decomposition.yaml"
 )
 $dashboardConfig = [pscustomobject]@{
     schemaVersion = 1
@@ -659,7 +683,7 @@ $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_INTEGRATIONS" -Va
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_TOKEN_USAGE" -Value $tokenUsage))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_CONFIG" -Value $dashboardConfig))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_PROFILE" -Value $state.project))
-Set-Content -LiteralPath $runtimeStatePath -Value $runtimeLines
+Set-AiSdlcContentWithRetry -Path $runtimeStatePath -Value $runtimeLines
 
 $result = [ordered]@{
     event = $event

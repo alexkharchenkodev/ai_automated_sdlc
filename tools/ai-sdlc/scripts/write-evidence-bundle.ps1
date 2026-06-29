@@ -45,6 +45,8 @@ foreach ($report in $requiredReports) {
 $optionalFrameworkReports = @(
     "sdlc-task-queue-summary.json",
     "sdlc-executor-summary.json",
+    "sdlc-task-breakdown-*.json",
+    "sdlc-task-decomposition-*.json",
     "sdlc-memory-lifecycle-report.json",
     "sdlc-reopen-policy-all-tasks.json",
     "sdlc-doctor-report.json"

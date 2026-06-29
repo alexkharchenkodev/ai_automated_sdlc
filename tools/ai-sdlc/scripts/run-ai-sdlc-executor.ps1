@@ -317,8 +317,31 @@ $processed = [System.Collections.Generic.List[object]]::new()
 foreach ($contract in $contracts) {
     $blocked = $false
     $waiting = $false
+    $skippedAsParent = $false
     $roleReports = [System.Collections.Generic.List[object]]::new()
     Write-ExecutorEvent -Contract $contract -Role "intake" -Status "completed" -Message "Executor loaded task contract." -Artifact @($contract.contractPath)
+
+    $decompositionResult = & "$PSScriptRoot/verify-task-decomposition.ps1" -Root $rootPath -TaskContractPath $contract.contractPath -ReportDirectory (Join-Path $reportRoot "decomposition") -LiveDirectory $LiveDirectory -EmitEvent -NoExitCode | ConvertFrom-Json
+    if ($decompositionResult.decision -eq "decomposition_required") {
+        $waiting = $true
+        Write-ExecutorEvent -Contract $contract -Role "ba" -Status "waiting" -Message "Complex task requires BA decomposition before implementation." -Artifact @($decompositionResult.contractPath)
+    } elseif ($decompositionResult.decision -eq "decomposed_parent") {
+        $skippedAsParent = $true
+        Write-ExecutorEvent -Contract $contract -Role "ba" -Status "completed" -Message "Parent task already decomposed; child tasks are the executable queue."
+        Write-ExecutorEvent -Contract $contract -Role "done" -Status "completed" -Message "Parent epic completed by BA decomposition; child tasks are the executable queue."
+    }
+
+    if ($waiting -or $skippedAsParent) {
+        $processed.Add([ordered]@{
+            taskId = $contract.taskId
+            title = $contract.title
+            blocked = $blocked
+            waiting = $waiting
+            skippedAsParent = $skippedAsParent
+            roleReports = @($roleReports)
+        })
+        continue
+    }
 
     foreach ($role in $roleSequence) {
         $requiredOutputs = Get-RoleRequiredOutputs -Executors $executors -Role $role
@@ -407,6 +430,7 @@ foreach ($contract in $contracts) {
         title = $contract.title
         blocked = $blocked
         waiting = $waiting
+        skippedAsParent = $skippedAsParent
         roleReports = @($roleReports)
     })
 }
@@ -423,6 +447,7 @@ $summary = [ordered]@{
     completedCount = @($processed | Where-Object { -not $_.blocked -and -not $_.waiting }).Count
     waitingCount = @($processed | Where-Object { $_.waiting }).Count
     blockedCount = @($processed | Where-Object { $_.blocked }).Count
+    skippedParentCount = @($processed | Where-Object { $_.skippedAsParent }).Count
     tasks = @($processed)
 }
 $jsonPath = Join-Path $reportRoot "sdlc-executor-summary.json"
