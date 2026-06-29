@@ -14,6 +14,8 @@ Use it to install a reusable AI SDLC baseline into another repository, then adap
 - `.github`: portable PR template and AI SDLC evidence workflow.
 - `install-ai-sdlc.ps1`: Windows/PowerShell installer.
 - `install-ai-sdlc.sh`: macOS/Linux shell installer.
+- `update-ai-sdlc.ps1` / `update-ai-sdlc.sh`: update an installed AI SDLC baseline from a newer framework checkout.
+- `uninstall-ai-sdlc.ps1` / `uninstall-ai-sdlc.sh`: remove installed AI SDLC managed files from a target repo.
 
 ## What This Does Not Export
 
@@ -42,6 +44,76 @@ sh "./install-ai-sdlc.sh" --target "<target-project-path>" --profile web-node
 ```
 
 Use `--force` only when you intentionally want to overwrite existing AI SDLC files in the target repo.
+
+Install writes a manifest to the target repository:
+
+```text
+.sdlc/ai-sdlc-install-manifest.json
+```
+
+The uninstall command uses that manifest to remove only files that were actually installed by AI SDLC.
+
+## Update An Installed AI SDLC
+
+Pull or download the newer framework version, then update a target project.
+
+Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\update-ai-sdlc.ps1" -TargetRoot "<target-project-path>"
+```
+
+macOS/Linux:
+
+```sh
+sh "./update-ai-sdlc.sh" --target "<target-project-path>"
+```
+
+By default update refreshes framework-owned docs, scripts, and dashboard files.
+Project-specific files are protected:
+
+```text
+AGENTS.md
+tools/ai-sdlc/config/project-profile.yaml
+tools/ai-sdlc/config/context_memory.yaml
+tools/ai-sdlc/config/integrations.yaml
+tools/ai-sdlc/config/token_budget.yaml
+tools/ai-sdlc/config/mcp_servers.example.yaml
+```
+
+When a protected file already exists, update writes the new framework copy as
+`<file>.new` for review instead of overwriting the user's configuration. Use
+`-ForceConfigs` or `--force-configs` only when you intentionally want to replace
+configured AI SDLC files. Use `-IncludeGitHub` / `--include-github` to update
+the optional GitHub workflow files, and `-IncludeAgents` / `--include-agents` to
+stage a new `AGENTS.md`.
+
+Preview an update without writing files:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\update-ai-sdlc.ps1" -TargetRoot "<target-project-path>" -DryRun
+```
+
+## Uninstall AI SDLC
+
+Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\uninstall-ai-sdlc.ps1" -TargetRoot "<target-project-path>" -DryRun
+powershell -ExecutionPolicy Bypass -File ".\uninstall-ai-sdlc.ps1" -TargetRoot "<target-project-path>"
+```
+
+macOS/Linux:
+
+```sh
+sh "./uninstall-ai-sdlc.sh" --target "<target-project-path>" --dry-run
+sh "./uninstall-ai-sdlc.sh" --target "<target-project-path>"
+```
+
+Generated evidence under `.sdlc/local-pipeline`, `.sdlc/live`, and
+`.sdlc/approvals` is kept by default. Add `-IncludeGenerated` or
+`--include-generated` only when you intentionally want to remove generated AI
+SDLC runtime artifacts too.
 
 ## Available Profiles
 

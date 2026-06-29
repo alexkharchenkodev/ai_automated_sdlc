@@ -59,6 +59,63 @@ function Copy-TreeIfAllowed {
     }
 }
 
+function ConvertTo-RelativeSdlcPath {
+    param(
+        [string] $RootPath,
+        [string] $Path
+    )
+
+    $normalizedRoot = $RootPath.TrimEnd("\", "/")
+    if ($Path.StartsWith($normalizedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return ($Path.Substring($normalizedRoot.Length).TrimStart("\", "/") -replace "\\", "/")
+    }
+
+    return ($Path -replace "\\", "/")
+}
+
+function Write-InstallManifest {
+    param(
+        [string] $TargetRootPath,
+        [string] $Profile,
+        [System.Collections.Generic.List[string]] $Copied,
+        [System.Collections.Generic.List[string]] $Skipped
+    )
+
+    $manifestPath = Join-Path $TargetRootPath ".sdlc/ai-sdlc-install-manifest.json"
+    $manifestDirectory = Split-Path -Parent $manifestPath
+    if (-not (Test-Path -LiteralPath $manifestDirectory)) {
+        New-Item -ItemType Directory -Force -Path $manifestDirectory | Out-Null
+    }
+
+    $managedFiles = @($Copied | ForEach-Object { ConvertTo-RelativeSdlcPath -RootPath $TargetRootPath -Path $_ } | Sort-Object -Unique)
+    $skippedFiles = @($Skipped | ForEach-Object { ConvertTo-RelativeSdlcPath -RootPath $TargetRootPath -Path $_ } | Sort-Object -Unique)
+
+    $manifest = [ordered]@{
+        schemaVersion = 1
+        installedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
+        installer = "install-ai-sdlc.ps1"
+        profile = $Profile
+        managedFiles = @($managedFiles)
+        skippedFiles = @($skippedFiles)
+        protectedUpdateFiles = @(
+            "AGENTS.md",
+            "tools/ai-sdlc/config/project-profile.yaml",
+            "tools/ai-sdlc/config/context_memory.yaml",
+            "tools/ai-sdlc/config/integrations.yaml",
+            "tools/ai-sdlc/config/token_budget.yaml",
+            "tools/ai-sdlc/config/mcp_servers.example.yaml"
+        )
+        generatedDirectories = @(
+            ".sdlc/local-pipeline",
+            ".sdlc/live",
+            ".sdlc/approvals"
+        )
+    }
+
+    $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath
+    return $manifestPath
+}
+
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetRootPath = Resolve-FullPath -Path $TargetRoot
 $profilePath = Join-Path $scriptRoot "profiles\$Profile.yaml"
@@ -109,11 +166,14 @@ Copy-FileIfAllowed `
     -Copied $copied `
     -Skipped $skipped
 
+$manifestPath = Write-InstallManifest -TargetRootPath $targetRootPath -Profile $Profile -Copied $copied -Skipped $skipped
+
 $summary = [ordered]@{
     targetRoot = $targetRootPath
     profile = $Profile
     copiedCount = $copied.Count
     skippedCount = $skipped.Count
+    manifestPath = $manifestPath
     force = [bool]$Force
     nextSteps = @(
         "Edit tools/ai-sdlc/config/project-profile.yaml for the target repository.",
@@ -121,6 +181,8 @@ $summary = [ordered]@{
         "Read AGENTS.md and docs/SDLC/README.md before starting AI-assisted work.",
         "Run tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.ps1 to generate fresh SDLC evidence.",
         "Run tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.ps1 -OpenDashboard to view live role progress.",
+        "Use update-ai-sdlc.ps1 from a newer framework checkout to update this AI SDLC baseline.",
+        "Use uninstall-ai-sdlc.ps1 with -DryRun first if you need to remove this AI SDLC baseline later.",
         "Review .github/workflows/ai-sdlc.yml before enabling strict project validation in CI.",
         "Do not copy old sdlc-*.json/md reports from another repository."
     )

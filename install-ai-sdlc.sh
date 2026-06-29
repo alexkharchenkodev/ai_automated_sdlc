@@ -49,6 +49,10 @@ fi
 
 copied_count=0
 skipped_count=0
+copied_list="${TMPDIR:-/tmp}/ai-sdlc-copied-$$.txt"
+skipped_list="${TMPDIR:-/tmp}/ai-sdlc-skipped-$$.txt"
+: > "$copied_list"
+: > "$skipped_list"
 
 copy_file_if_allowed() {
   src="$1"
@@ -58,11 +62,13 @@ copy_file_if_allowed() {
 
   if [ -f "$dest" ] && [ "$force" != "true" ]; then
     skipped_count=$((skipped_count + 1))
+    printf "%s\n" "$dest" >> "$skipped_list"
     return 0
   fi
 
   cp "$src" "$dest"
   copied_count=$((copied_count + 1))
+  printf "%s\n" "$dest" >> "$copied_list"
 }
 
 copy_tree_if_allowed() {
@@ -102,12 +108,67 @@ copy_tree_portable "$script_dir/github" "$target_dir/.github"
 copy_file_if_allowed "$profile_path" "$target_dir/tools/ai-sdlc/config/project-profile.yaml"
 copy_file_if_allowed "$script_dir/AGENTS.md.template" "$target_dir/AGENTS.md"
 
+manifest_dir="$target_dir/.sdlc"
+manifest_path="$manifest_dir/ai-sdlc-install-manifest.json"
+mkdir -p "$manifest_dir"
+
+json_escape() {
+  printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+write_json_array_from_paths() {
+  list_path="$1"
+  first="true"
+  while IFS= read -r absolute_path; do
+    [ -n "$absolute_path" ] || continue
+    relative_path=${absolute_path#"$target_dir"/}
+    relative_path=$(printf "%s" "$relative_path" | sed 's#\\#/#g')
+    if [ "$first" = "true" ]; then
+      first="false"
+    else
+      printf ",\n"
+    fi
+    printf '    "%s"' "$(json_escape "$relative_path")"
+  done < "$list_path"
+}
+
+{
+  printf '{\n'
+  printf '  "schemaVersion": 1,\n'
+  printf '  "installedAtUtc": "%s",\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  printf '  "installer": "install-ai-sdlc.sh",\n'
+  printf '  "profile": "%s",\n' "$(json_escape "$profile")"
+  printf '  "managedFiles": [\n'
+  write_json_array_from_paths "$copied_list"
+  printf '\n  ],\n'
+  printf '  "skippedFiles": [\n'
+  write_json_array_from_paths "$skipped_list"
+  printf '\n  ],\n'
+  printf '  "protectedUpdateFiles": [\n'
+  printf '    "AGENTS.md",\n'
+  printf '    "tools/ai-sdlc/config/project-profile.yaml",\n'
+  printf '    "tools/ai-sdlc/config/context_memory.yaml",\n'
+  printf '    "tools/ai-sdlc/config/integrations.yaml",\n'
+  printf '    "tools/ai-sdlc/config/token_budget.yaml",\n'
+  printf '    "tools/ai-sdlc/config/mcp_servers.example.yaml"\n'
+  printf '  ],\n'
+  printf '  "generatedDirectories": [\n'
+  printf '    ".sdlc/local-pipeline",\n'
+  printf '    ".sdlc/live",\n'
+  printf '    ".sdlc/approvals"\n'
+  printf '  ]\n'
+  printf '}\n'
+} > "$manifest_path"
+
+rm -f "$copied_list" "$skipped_list"
+
 cat <<EOF
 {
   "targetRoot": "$target_dir",
   "profile": "$profile",
   "copiedCount": $copied_count,
   "skippedCount": $skipped_count,
+  "manifestPath": "$manifest_path",
   "force": $force,
   "nextSteps": [
     "Edit tools/ai-sdlc/config/project-profile.yaml for the target repository.",
@@ -115,6 +176,8 @@ cat <<EOF
     "Read AGENTS.md and docs/SDLC/README.md before starting AI-assisted work.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.sh to generate fresh SDLC evidence on macOS/Linux.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.sh --open-dashboard to view live role progress.",
+    "Use update-ai-sdlc.sh from a newer framework checkout to update this AI SDLC baseline.",
+    "Use uninstall-ai-sdlc.sh --dry-run first if you need to remove this AI SDLC baseline later.",
     "Review .github/workflows/ai-sdlc.yml before enabling strict project validation in CI.",
     "Do not copy old sdlc-*.json/md reports from another repository."
   ]
