@@ -34,7 +34,7 @@ The verifier counts task reopens, role-pair loops, missing reasons, and critical
 
 ## 4. Real Queue Runner
 
-`run-ai-sdlc-task-queue.ps1` processes `.sdlc/task-contracts/*.json` in order, emits live dashboard events, runs handoff gates, checks approvals, verifies reopen policy, and writes a queue summary.
+`run-ai-sdlc-task-queue.ps1` processes `.sdlc/task-contracts/*.json` in order, emits live dashboard events, runs every configured handoff gate through `done`, checks approvals, verifies reopen policy, and writes a queue summary.
 
 ## 5. Framework Doctor 2.0
 
@@ -90,4 +90,3 @@ sh tools/ai-sdlc/scripts/ai-sdlc.sh doctor
 ```
 
 Supported commands: `doctor`, `dashboard`, `new-task`, `queue`, `handoff`, `reopen-policy`, `approval`, `memory`, `evidence`, `pipeline`, and `orchestrator`.
-

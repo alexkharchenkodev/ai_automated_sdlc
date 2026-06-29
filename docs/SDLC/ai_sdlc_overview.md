@@ -12,15 +12,23 @@ Default local execution uses one accountable AI coding session as the Lead Orche
 Request or ticket
   -> Intake
   -> BA
+  -> Architecture
+  -> Memory / Reuse
   -> Design
-  -> Design Review
   -> Engineering
   -> Code Review
-  -> Automation QA
-  -> Manual QA
-  -> Release
-  -> Traceability and backlog
+  -> Test Planning
+  -> Test Execution
+  -> Evidence Bundle
+  -> Done / Handoff
 ```
+
+Additional role lenses are applied inside this canonical runtime flow instead of always adding more dashboard nodes:
+
+- Design Review is part of `design` and `code_review`.
+- Automation QA and Manual QA are part of `test_planning` and `test_execution`.
+- Release readiness is part of `evidence` and `done`.
+- Traceability and backlog updates are evidence artifacts attached to `done`.
 
 ## Core Principles
 
@@ -37,13 +45,14 @@ Request or ticket
 
 - Task intake or ticket brief.
 - BA brief.
+- Architecture boundary notes.
+- Memory and reuse evidence.
 - Design brief or design review notes when user-facing behavior changes.
 - Implementation plan.
 - Code review report.
-- QA test plan.
-- Automation evidence.
-- Manual QA report when needed.
-- Release note.
-- Traceability record.
+- Test plan.
+- Automated or manual validation evidence.
+- Evidence bundle.
+- Handoff, release note, or traceability record when needed.
 - Execution lane report.
 - Compliance report.

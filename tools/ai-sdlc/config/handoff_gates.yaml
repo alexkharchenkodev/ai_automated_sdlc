@@ -40,11 +40,16 @@ gates:
       - implementationNotes
       - changedFiles
       - validationPlan
-  code_review_to_test_execution:
+  code_review_to_test_planning:
     from_role: code_review
-    to_role: test_execution
+    to_role: test_planning
     required_contract_fields:
       - reviewFindings
+      - validationPlan
+  test_planning_to_test_execution:
+    from_role: test_planning
+    to_role: test_execution
+    required_contract_fields:
       - validationPlan
   test_execution_to_evidence:
     from_role: test_execution
@@ -52,4 +57,9 @@ gates:
     required_contract_fields:
       - validationEvidence
       - residualRisk
-
+  evidence_to_done:
+    from_role: evidence
+    to_role: done
+    required_contract_fields:
+      - evidenceBundle
+      - residualRisk

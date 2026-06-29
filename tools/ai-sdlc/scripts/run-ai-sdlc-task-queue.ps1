@@ -21,6 +21,45 @@ function Write-QueueEvent {
     & "$PSScriptRoot/write-role-event.ps1" -Root $rootPath -BatchId $Contract.batchId -TaskId $Contract.taskId -TaskTitle $Contract.title -TaskOrder $Contract.taskOrder -Role $Role -Status $Status -Message $Message -Artifact $Artifact -LiveDirectory $LiveDirectory | Out-Null
 }
 
+function Save-TaskContract {
+    param([object] $Contract)
+
+    $path = [string]$Contract.contractPath
+    $Contract.PSObject.Properties.Remove("contractPath")
+    $Contract | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $path
+    $Contract | Add-Member -NotePropertyName contractPath -NotePropertyValue $path -Force
+}
+
+function Ensure-ContractListValue {
+    param(
+        [object] $Contract,
+        [string] $PropertyName,
+        [string] $Value
+    )
+
+    $property = $Contract.PSObject.Properties[$PropertyName]
+    if (-not $property) {
+        $Contract | Add-Member -NotePropertyName $PropertyName -NotePropertyValue @($Value) -Force
+        return
+    }
+
+    if (@($property.Value).Count -eq 0) {
+        $property.Value = @($Value)
+    }
+}
+
+function Invoke-QueueHandoff {
+    param(
+        [object] $Contract,
+        [string] $FromRole,
+        [string] $ToRole
+    )
+
+    Write-QueueEvent -Contract $Contract -Role $FromRole -Status "completed" -Message "$FromRole work packet prepared."
+    $handoffResult = & "$PSScriptRoot/verify-handoff-gate.ps1" -Root $rootPath -FromRole $FromRole -ToRole $ToRole -TaskContractPath $Contract.contractPath -ReportDirectory (Join-Path $reportRoot "handoffs") -LiveDirectory $LiveDirectory -EmitEvent -NoExitCode | ConvertFrom-Json
+    return [bool]$handoffResult.passed
+}
+
 $rootPath = Resolve-AiSdlcRoot -Root $Root
 $contractsRoot = if ([System.IO.Path]::IsPathRooted($ContractsDirectory)) { $ContractsDirectory } else { Join-Path $rootPath $ContractsDirectory }
 if (-not (Test-Path -LiteralPath $contractsRoot)) { throw "Task contracts directory not found: $contractsRoot" }
@@ -39,7 +78,7 @@ foreach ($contract in $contracts) {
     Write-QueueEvent -Contract $contract -Role "intake" -Status "running" -Message "Task queue picked up contract."
     Write-QueueEvent -Contract $contract -Role "intake" -Status "completed" -Message "Task contract loaded." -Artifact @($contract.contractPath)
 
-    $handoffPairs = @(
+    $preImplementationPairs = @(
         @("ba", "architecture"),
         @("architecture", "memory_reuse"),
         @("memory_reuse", "design"),
@@ -47,10 +86,8 @@ foreach ($contract in $contracts) {
     )
 
     $blocked = $false
-    foreach ($pair in $handoffPairs) {
-        Write-QueueEvent -Contract $contract -Role $pair[0] -Status "completed" -Message "$($pair[0]) work packet prepared."
-        $handoffResult = & "$PSScriptRoot/verify-handoff-gate.ps1" -Root $rootPath -FromRole $pair[0] -ToRole $pair[1] -TaskContractPath $contract.contractPath -ReportDirectory (Join-Path $reportRoot "handoffs") -LiveDirectory $LiveDirectory -EmitEvent -NoExitCode | ConvertFrom-Json
-        if (-not [bool]$handoffResult.passed) {
+    foreach ($pair in $preImplementationPairs) {
+        if (-not (Invoke-QueueHandoff -Contract $contract -FromRole $pair[0] -ToRole $pair[1])) {
             $blocked = $true
             break
         }
@@ -62,11 +99,53 @@ foreach ($contract in $contracts) {
     }
 
     if (-not $blocked) {
+        Ensure-ContractListValue -Contract $contract -PropertyName "implementationNotes" -Value "Queue runner simulation recorded an implementation packet. Real agents should replace this with concrete implementation notes."
+        Ensure-ContractListValue -Contract $contract -PropertyName "changedFiles" -Value "No product file change recorded by queue runner simulation."
+        Save-TaskContract -Contract $contract
         Write-QueueEvent -Contract $contract -Role "engineering" -Status "completed" -Message "Engineering packet completed by queue runner simulation."
+
+        if (-not (Invoke-QueueHandoff -Contract $contract -FromRole "engineering" -ToRole "code_review")) {
+            $blocked = $true
+        }
+    }
+
+    if (-not $blocked) {
+        Ensure-ContractListValue -Contract $contract -PropertyName "reviewFindings" -Value "Queue runner simulation found no blocking review issue. Real agents should replace this with concrete review findings."
+        Save-TaskContract -Contract $contract
         Write-QueueEvent -Contract $contract -Role "code_review" -Status "completed" -Message "Code review gate completed by queue runner simulation."
+        if (-not (Invoke-QueueHandoff -Contract $contract -FromRole "code_review" -ToRole "test_planning")) {
+            $blocked = $true
+        }
+    }
+
+    if (-not $blocked) {
+        Write-QueueEvent -Contract $contract -Role "test_planning" -Status "completed" -Message "Validation plan accepted by queue runner simulation."
+        if (-not (Invoke-QueueHandoff -Contract $contract -FromRole "test_planning" -ToRole "test_execution")) {
+            $blocked = $true
+        }
+    }
+
+    if (-not $blocked) {
+        Ensure-ContractListValue -Contract $contract -PropertyName "validationEvidence" -Value "Queue runner simulation recorded validation evidence. Real agents should replace this with command output or manual QA evidence."
+        Ensure-ContractListValue -Contract $contract -PropertyName "residualRisk" -Value "No residual risk recorded by queue runner simulation."
+        Save-TaskContract -Contract $contract
         Write-QueueEvent -Contract $contract -Role "test_execution" -Status "completed" -Message "Validation gate completed by queue runner simulation."
+        if (-not (Invoke-QueueHandoff -Contract $contract -FromRole "test_execution" -ToRole "evidence")) {
+            $blocked = $true
+        }
+    }
+
+    if (-not $blocked) {
         & "$PSScriptRoot/verify-reopen-policy.ps1" -Root $rootPath -TaskId $contract.taskId -ReportDirectory (Join-Path $reportRoot "reopen-policy") -LiveDirectory $LiveDirectory -NoExitCode | Out-Null
+        Ensure-ContractListValue -Contract $contract -PropertyName "evidenceBundle" -Value "Queue runner simulation generated task-level evidence. Real agents should attach the final evidence bundle path."
+        Save-TaskContract -Contract $contract
         Write-QueueEvent -Contract $contract -Role "evidence" -Status "completed" -Message "Queue evidence generated."
+        if (-not (Invoke-QueueHandoff -Contract $contract -FromRole "evidence" -ToRole "done")) {
+            $blocked = $true
+        }
+    }
+
+    if (-not $blocked) {
         Write-QueueEvent -Contract $contract -Role "done" -Status "completed" -Message "Task queue item completed." -Artifact @($contract.contractPath)
     }
 

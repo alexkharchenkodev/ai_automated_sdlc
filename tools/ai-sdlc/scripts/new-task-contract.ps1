@@ -69,6 +69,7 @@ $contract = [ordered]@{
     validationPlan = @("Run configured build/test/lint commands or record a skip reason.")
     validationEvidence = @()
     residualRisk = @()
+    evidenceBundle = @()
 }
 
 $safeTaskId = ConvertTo-SafeId -Value $TaskId

@@ -28,9 +28,9 @@ Outputs:
 - accessibility/input notes
 - visual rubric for reference-matching work
 
-## Design Review
+## Design Review Lens
 
-Owns consistency and usability risk.
+Owns consistency and usability risk. This is usually applied inside `design` and `code_review` instead of becoming a separate required dashboard role.
 
 Outputs:
 
@@ -61,9 +61,33 @@ Outputs:
 - residual risk
 - approval or blockers
 
-## Automation QA
+## Test Planning
 
-Owns repeatable validation.
+Owns validation selection.
+
+Outputs:
+
+- test scope
+- build/test/lint command selection
+- manual QA needs
+- screenshot/video requirements
+- skip reasons when validation cannot run
+
+## Test Execution
+
+Owns validation evidence.
+
+Outputs:
+
+- command output summary
+- automated test evidence
+- manual QA report when needed
+- failure repro artifacts
+- residual risk
+
+## Automation QA Lens
+
+Owns repeatable validation. This lens is applied inside `test_planning` and `test_execution`.
 
 Outputs:
 
@@ -72,9 +96,9 @@ Outputs:
 - validation report
 - failure repro artifacts
 
-## Manual QA
+## Manual QA Lens
 
-Owns human-observed product quality.
+Owns human-observed product quality. This lens is applied inside `test_execution` when screenshots, manual flows, device checks, or exploratory validation are required.
 
 Outputs:
 
@@ -83,9 +107,22 @@ Outputs:
 - known issues
 - release recommendation
 
-## Release
+## Evidence
 
-Owns readiness to ship.
+Owns the final machine-readable proof bundle.
+
+Outputs:
+
+- evidence bundle
+- compliance decision
+- approval records
+- reopen summary
+- memory and context reports
+- residual risk
+
+## Release Lens
+
+Owns readiness to ship. This lens is applied inside `evidence` and `done`.
 
 Outputs:
 
