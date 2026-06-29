@@ -42,7 +42,7 @@ extract_manifest_files() {
 }
 
 fallback_files() {
-  for dir in docs/SDLC docs/LLM tools/ai-sdlc dashboard; do
+  for dir in docs/SDLC docs/LLM tools/ai-sdlc dashboard adapters; do
     if [ -d "$target_dir/$dir" ]; then
       (cd "$target_dir" && find "$dir" -type f)
     fi
@@ -89,7 +89,7 @@ done < "$tmp_files"
 
 removed_generated=""
 if [ "$include_generated" = "true" ]; then
-  for dir in .sdlc/local-pipeline .sdlc/live .sdlc/approvals; do
+  for dir in .sdlc/local-pipeline .sdlc/live .sdlc/approvals .sdlc/task-contracts .sdlc/task-queue .sdlc/handoffs .sdlc/reopen-policy .sdlc/approval-gates .sdlc/memory-index .sdlc/memory-lifecycle; do
     if [ -e "$target_dir/$dir" ]; then
       [ "$dry_run" = "true" ] || rm -rf "$target_dir/$dir"
       removed_generated="$removed_generated $dir"
@@ -103,7 +103,7 @@ if [ -f "$manifest" ]; then
 fi
 
 if [ "$dry_run" != "true" ]; then
-  for dir in dashboard tools/ai-sdlc/scripts tools/ai-sdlc/config tools/ai-sdlc tools docs/SDLC/templates docs/SDLC docs/LLM .github/workflows .github .sdlc; do
+  for dir in dashboard adapters/codex adapters/copilot adapters/claude adapters/cursor adapters/generic adapters tools/ai-sdlc/scripts tools/ai-sdlc/config tools/ai-sdlc tools docs/SDLC/templates docs/SDLC docs/LLM .github/workflows .github .sdlc; do
     rmdir "$target_dir/$dir" 2>/dev/null || true
   done
 fi

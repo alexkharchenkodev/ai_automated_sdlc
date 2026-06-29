@@ -64,11 +64,22 @@ $requiredFiles = @(
     "docs/LLM/canonical_naming_rules.md",
     "tools/ai-sdlc/config/project-profile.yaml",
     "tools/ai-sdlc/config/context_memory.yaml",
+    "tools/ai-sdlc/config/memory_lifecycle.yaml",
     "tools/ai-sdlc/config/integrations.yaml",
     "tools/ai-sdlc/config/token_budget.yaml",
     "tools/ai-sdlc/config/execution_lanes.yaml",
     "tools/ai-sdlc/config/role_flow.yaml",
+    "tools/ai-sdlc/config/handoff_gates.yaml",
+    "tools/ai-sdlc/config/reopen_policy.yaml",
+    "tools/ai-sdlc/config/approval_gates.yaml",
     "tools/ai-sdlc/config/safety_gates.yaml",
+    "tools/ai-sdlc/scripts/ai-sdlc.ps1",
+    "tools/ai-sdlc/scripts/new-task-contract.ps1",
+    "tools/ai-sdlc/scripts/run-ai-sdlc-task-queue.ps1",
+    "tools/ai-sdlc/scripts/verify-handoff-gate.ps1",
+    "tools/ai-sdlc/scripts/verify-reopen-policy.ps1",
+    "tools/ai-sdlc/scripts/verify-approval-gate.ps1",
+    "tools/ai-sdlc/scripts/check-memory-lifecycle.ps1",
     "tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.ps1",
     "tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.ps1",
     "tools/ai-sdlc/scripts/select-sdlc-lane.ps1",
@@ -76,7 +87,12 @@ $requiredFiles = @(
     "tools/ai-sdlc/scripts/doctor-ai-sdlc.ps1",
     "dashboard/index.html",
     "dashboard/styles.css",
-    "dashboard/app.js"
+    "dashboard/app.js",
+    "adapters/codex/AGENTS.md",
+    "adapters/copilot/copilot-instructions.md",
+    "adapters/claude/CLAUDE.md",
+    "adapters/cursor/rules.md",
+    "adapters/generic/ai-agent-adapter.md"
 )
 
 foreach ($relative in $requiredFiles) {
@@ -127,6 +143,7 @@ if (Test-Path -LiteralPath $scriptsRoot) {
 }
 
 $shellWrappers = @(
+    "tools/ai-sdlc/scripts/ai-sdlc.sh",
     "tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.sh",
     "tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.sh",
     "tools/ai-sdlc/scripts/verify-sdlc-compliance.sh",

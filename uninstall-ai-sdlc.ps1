@@ -26,7 +26,7 @@ function Get-FallbackManagedFiles {
     param([string] $RootPath)
 
     $files = [System.Collections.Generic.List[string]]::new()
-    foreach ($dir in @("docs/SDLC", "docs/LLM", "tools/ai-sdlc", "dashboard")) {
+    foreach ($dir in @("docs/SDLC", "docs/LLM", "tools/ai-sdlc", "dashboard", "adapters")) {
         $full = Join-Path $RootPath $dir
         if (Test-Path -LiteralPath $full) {
             Get-ChildItem -LiteralPath $full -Recurse -File | ForEach-Object {
@@ -86,6 +86,12 @@ function Remove-EmptyDirectories {
 
     foreach ($relative in @(
         "dashboard",
+        "adapters/codex",
+        "adapters/copilot",
+        "adapters/claude",
+        "adapters/cursor",
+        "adapters/generic",
+        "adapters",
         "tools/ai-sdlc/scripts",
         "tools/ai-sdlc/config",
         "tools/ai-sdlc",
@@ -118,7 +124,18 @@ if (Test-Path -LiteralPath $manifest) {
 } elseif ($ForceFallback) {
     $usedFallback = $true
     $managedFiles = @(Get-FallbackManagedFiles -RootPath $rootPath)
-    $generatedDirectories = @(".sdlc/local-pipeline", ".sdlc/live", ".sdlc/approvals")
+    $generatedDirectories = @(
+        ".sdlc/local-pipeline",
+        ".sdlc/live",
+        ".sdlc/approvals",
+        ".sdlc/task-contracts",
+        ".sdlc/task-queue",
+        ".sdlc/handoffs",
+        ".sdlc/reopen-policy",
+        ".sdlc/approval-gates",
+        ".sdlc/memory-index",
+        ".sdlc/memory-lifecycle"
+    )
 } else {
     $result = [ordered]@{
         targetRoot = $rootPath

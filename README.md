@@ -9,6 +9,8 @@ Use it to install a reusable AI SDLC baseline into another repository, then adap
 - `docs/SDLC`: universal operating model, gates, role contracts, evidence rules, and templates.
 - `docs/LLM`: lean AI coding and naming guardrails that point to the project profile instead of a fixed engine or language.
 - `tools/ai-sdlc/config`: portable profile and gate configuration examples.
+- `tools/ai-sdlc/scripts/ai-sdlc.ps1` and `ai-sdlc.sh`: single CLI entrypoints for doctor, dashboard, task contracts, queue, gates, memory lifecycle, evidence, pipeline, and orchestrator.
+- `adapters`: Codex, Copilot, Claude, Cursor, and generic AI client adapter templates.
 - `dashboard`: local static dashboard for role flow, safety, integrations, context memory, and token estimates.
 - `profiles`: ready-to-copy profiles for common stacks.
 - `.github`: portable PR template and AI SDLC evidence workflow.
@@ -138,13 +140,13 @@ After installing and adjusting `project-profile.yaml`, run the pipeline for chan
 First, verify framework readiness:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\doctor-ai-sdlc.ps1" -Pretty
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" doctor -Pretty
 ```
 
 On macOS/Linux:
 
 ```sh
-sh "./tools/ai-sdlc/scripts/doctor-ai-sdlc.sh"
+sh "./tools/ai-sdlc/scripts/ai-sdlc.sh" doctor
 ```
 
 Doctor reports are written to `.sdlc/doctor/` and appear in the live dashboard after the next dashboard event.
@@ -189,6 +191,29 @@ The pipeline writes fresh evidence under:
 ```
 
 Use `-SkipValidationExecution` or `--skip-validation` when first bootstrapping a project whose build/test commands are not ready yet.
+
+## Run The Task Queue Control Plane
+
+Create a task contract:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" new-task -Title "Add checkout flow" -Pretty
+```
+
+Process queued contracts with handoff, reopen, approval, memory, and evidence checks:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\ai-sdlc.ps1" queue -Pretty
+```
+
+macOS/Linux:
+
+```sh
+sh "./tools/ai-sdlc/scripts/ai-sdlc.sh" new-task -Title "Add checkout flow"
+sh "./tools/ai-sdlc/scripts/ai-sdlc.sh" queue
+```
+
+The queue runner writes reports under `.sdlc/task-queue/` and sends live task events to the dashboard.
 
 Verify the final machine-readable SDLC verdict:
 

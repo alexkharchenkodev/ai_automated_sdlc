@@ -1,0 +1,15 @@
+schema_version: 1
+
+settings:
+  max_reopens_per_task: 3
+  max_reopens_per_role_pair: 2
+  block_on_critical_reopen: true
+  require_reason: true
+  require_reopen_report: true
+
+severity:
+  info: continue
+  warning: continue
+  blocked: review_required
+  critical: blocked
+

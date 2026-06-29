@@ -1,0 +1,19 @@
+schema_version: 1
+
+settings:
+  max_index_age_days: 14
+  require_enabled_provider_sources: true
+  require_adr_for_architecture_changes: true
+  require_reuse_evidence_for_medium_risk: true
+  index_stamp_directory: .sdlc/memory-index
+
+providers:
+  adr:
+    evidence_hint: docs/ADR or docs/architecture decision records
+  rag:
+    evidence_hint: indexed docs, README, AGENTS, product notes
+  graph_rag:
+    evidence_hint: local graph files under .sdlc/graph
+  code_search:
+    evidence_hint: repo search snippets and reused code references
+

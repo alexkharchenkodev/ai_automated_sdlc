@@ -1,0 +1,19 @@
+schema_version: 1
+
+settings:
+  approval_directory: .sdlc/approvals
+  default_required_status: approved
+
+gates:
+  before_implementation:
+    role: engineering
+    required_for:
+      - high_risk
+      - protected_surface
+      - destructive_change
+  before_release:
+    role: done
+    required_for:
+      - production_release
+      - irreversible_migration
+

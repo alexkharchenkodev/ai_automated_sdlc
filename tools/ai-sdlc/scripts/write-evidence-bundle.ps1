@@ -26,6 +26,7 @@ $requiredReports = @(
 )
 
 $reports = [System.Collections.Generic.List[object]]::new()
+$frameworkReports = [System.Collections.Generic.List[object]]::new()
 $missing = [System.Collections.Generic.List[string]]::new()
 
 foreach ($report in $requiredReports) {
@@ -38,6 +39,32 @@ foreach ($report in $requiredReports) {
         path = $report
         present = $present
         sizeBytes = if ($present) { (Get-Item -LiteralPath $path).Length } else { 0 }
+    })
+}
+
+$optionalFrameworkReports = @(
+    "sdlc-task-queue-summary.json",
+    "sdlc-memory-lifecycle-report.json",
+    "sdlc-reopen-policy-all-tasks.json",
+    "sdlc-doctor-report.json"
+)
+foreach ($report in $optionalFrameworkReports) {
+    $matches = @(Get-ChildItem -LiteralPath $reportRoot -Recurse -Filter $report -File -ErrorAction SilentlyContinue)
+    $frameworkReports.Add([ordered]@{
+        path = $report
+        present = ($matches.Count -gt 0)
+        matches = @($matches | ForEach-Object { $_.FullName })
+    })
+}
+
+$approvalRecords = @()
+$approvalRoot = Join-Path $rootPath ".sdlc/approvals"
+if (Test-Path -LiteralPath $approvalRoot) {
+    $approvalRecords = @(Get-ChildItem -LiteralPath $approvalRoot -Filter "*.json" -File -ErrorAction SilentlyContinue | ForEach-Object {
+        [ordered]@{
+            path = $_.FullName
+            sizeBytes = $_.Length
+        }
     })
 }
 
@@ -111,6 +138,8 @@ $result = [ordered]@{
     tokenUsageDecision = $tokenDecision
     missingReports = @($missing)
     reports = @($reports)
+    frameworkReports = @($frameworkReports)
+    approvalRecords = @($approvalRecords)
 }
 
 $lines = @(
@@ -122,7 +151,9 @@ $lines = @(
     "- Context memory passed: $contextPassed",
     "- Integrations passed: $integrationsPassed",
     "- Token usage passed: $tokenPassed",
-    "- Missing reports: $($missing.Count)"
+    "- Missing reports: $($missing.Count)",
+    "- Framework reports present: $(@($frameworkReports | Where-Object { $_.present }).Count)/$($frameworkReports.Count)",
+    "- Approval records: $($approvalRecords.Count)"
 )
 
 $jsonPath = if ([System.IO.Path]::IsPathRooted($JsonOutputPath)) { $JsonOutputPath } else { Join-Path $reportRoot $JsonOutputPath }

@@ -95,7 +95,14 @@ function Update-InstallManifest {
         generatedDirectories = @(
             ".sdlc/local-pipeline",
             ".sdlc/live",
-            ".sdlc/approvals"
+            ".sdlc/approvals",
+            ".sdlc/task-contracts",
+            ".sdlc/task-queue",
+            ".sdlc/handoffs",
+            ".sdlc/reopen-policy",
+            ".sdlc/approval-gates",
+            ".sdlc/memory-index",
+            ".sdlc/memory-lifecycle"
         )
     }
 
@@ -128,7 +135,8 @@ foreach ($file in $protectedFiles) { $protectedSet[$file] = $true }
 $includeRoots = @(
     @{ source = "docs"; destination = "docs" },
     @{ source = "tools"; destination = "tools" },
-    @{ source = "dashboard"; destination = "dashboard" }
+    @{ source = "dashboard"; destination = "dashboard" },
+    @{ source = "adapters"; destination = "adapters" }
 )
 if ($IncludeGitHub) {
     $includeRoots += @{ source = "github"; destination = ".github" }

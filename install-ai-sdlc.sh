@@ -104,6 +104,7 @@ copy_tree_portable() {
 copy_tree_portable "$script_dir/docs" "$target_dir/docs"
 copy_tree_portable "$script_dir/tools" "$target_dir/tools"
 copy_tree_portable "$script_dir/dashboard" "$target_dir/dashboard"
+copy_tree_portable "$script_dir/adapters" "$target_dir/adapters"
 copy_tree_portable "$script_dir/github" "$target_dir/.github"
 copy_file_if_allowed "$profile_path" "$target_dir/tools/ai-sdlc/config/project-profile.yaml"
 copy_file_if_allowed "$script_dir/AGENTS.md.template" "$target_dir/AGENTS.md"
@@ -156,7 +157,14 @@ write_json_array_from_paths() {
   printf '  "generatedDirectories": [\n'
   printf '    ".sdlc/local-pipeline",\n'
   printf '    ".sdlc/live",\n'
-  printf '    ".sdlc/approvals"\n'
+  printf '    ".sdlc/approvals",\n'
+  printf '    ".sdlc/task-contracts",\n'
+  printf '    ".sdlc/task-queue",\n'
+  printf '    ".sdlc/handoffs",\n'
+  printf '    ".sdlc/reopen-policy",\n'
+  printf '    ".sdlc/approval-gates",\n'
+  printf '    ".sdlc/memory-index",\n'
+  printf '    ".sdlc/memory-lifecycle"\n'
   printf '  ]\n'
   printf '}\n'
 } > "$manifest_path"
@@ -175,6 +183,7 @@ cat <<EOF
     "Edit tools/ai-sdlc/config/project-profile.yaml for the target repository.",
     "Edit tools/ai-sdlc/config/context_memory.yaml, integrations.yaml, token_budget.yaml, and execution_lanes.yaml.",
     "Run tools/ai-sdlc/scripts/doctor-ai-sdlc.sh to verify framework readiness.",
+    "Use tools/ai-sdlc/scripts/ai-sdlc.sh as the main CLI entrypoint.",
     "Read AGENTS.md and docs/SDLC/README.md before starting AI-assisted work.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.sh to generate fresh SDLC evidence on macOS/Linux.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.sh --open-dashboard to view live role progress.",

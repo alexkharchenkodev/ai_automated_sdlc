@@ -1,0 +1,55 @@
+schema_version: 1
+
+settings:
+  default_decision_on_missing_contract: reopen_required
+  emit_reopen_event_on_failed_gate: true
+
+gates:
+  ba_to_architecture:
+    from_role: ba
+    to_role: architecture
+    required_contract_fields:
+      - taskId
+      - title
+      - description
+      - primaryTarget
+      - acceptanceCriteria
+      - nonGoals
+  architecture_to_memory_reuse:
+    from_role: architecture
+    to_role: memory_reuse
+    required_contract_fields:
+      - architectureBoundaries
+      - protectedSurfaces
+      - dependencies
+  memory_reuse_to_design:
+    from_role: memory_reuse
+    to_role: design
+    required_contract_fields:
+      - reuseEvidence
+  design_to_engineering:
+    from_role: design
+    to_role: engineering
+    required_contract_fields:
+      - uxNotes
+      - validationPlan
+  engineering_to_code_review:
+    from_role: engineering
+    to_role: code_review
+    required_contract_fields:
+      - implementationNotes
+      - changedFiles
+      - validationPlan
+  code_review_to_test_execution:
+    from_role: code_review
+    to_role: test_execution
+    required_contract_fields:
+      - reviewFindings
+      - validationPlan
+  test_execution_to_evidence:
+    from_role: test_execution
+    to_role: evidence
+    required_contract_fields:
+      - validationEvidence
+      - residualRisk
+

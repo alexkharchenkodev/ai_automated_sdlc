@@ -11,6 +11,7 @@ Start here:
 - `definition_of_ready.md` and `definition_of_done.md` for work-item quality.
 - `automated_pipeline.md` for the portable local automation flow.
 - `framework_doctor.md` for install/config readiness checks.
+- `framework_control_plane.md` for task contracts, handoff gates, reopen policy, queue runner, memory lifecycle, approvals, adapters, and CLI.
 - `execution_lanes.md` for fast/standard/strict lanes and CI compliance verdicts.
 - `live_dashboard.md` for role visualization and event logs.
 - `safe_change_policy.md` for blockers, approval records, rollback plans, and safety evidence.

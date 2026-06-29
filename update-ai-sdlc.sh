@@ -97,6 +97,7 @@ copy_tree() {
 copy_tree "$source_dir/docs" "docs"
 copy_tree "$source_dir/tools" "tools"
 copy_tree "$source_dir/dashboard" "dashboard"
+copy_tree "$source_dir/adapters" "adapters"
 [ "$include_github" = "true" ] && copy_tree "$source_dir/github" ".github"
 [ "$include_agents" = "true" ] && [ -f "$source_dir/AGENTS.md.template" ] && copy_one "$source_dir/AGENTS.md.template" "AGENTS.md"
 
@@ -127,7 +128,7 @@ if [ "$dry_run" != "true" ]; then
     printf '    "tools/ai-sdlc/config/execution_lanes.yaml",\n'
     printf '    "tools/ai-sdlc/config/mcp_servers.example.yaml"\n'
     printf '  ],\n'
-    printf '  "generatedDirectories": [".sdlc/local-pipeline", ".sdlc/live", ".sdlc/approvals"]\n'
+    printf '  "generatedDirectories": [".sdlc/local-pipeline", ".sdlc/live", ".sdlc/approvals", ".sdlc/task-contracts", ".sdlc/task-queue", ".sdlc/handoffs", ".sdlc/reopen-policy", ".sdlc/approval-gates", ".sdlc/memory-index", ".sdlc/memory-lifecycle"]\n'
     printf '}\n'
   } > "$manifest_path"
 fi

@@ -109,7 +109,14 @@ function Write-InstallManifest {
         generatedDirectories = @(
             ".sdlc/local-pipeline",
             ".sdlc/live",
-            ".sdlc/approvals"
+            ".sdlc/approvals",
+            ".sdlc/task-contracts",
+            ".sdlc/task-queue",
+            ".sdlc/handoffs",
+            ".sdlc/reopen-policy",
+            ".sdlc/approval-gates",
+            ".sdlc/memory-index",
+            ".sdlc/memory-lifecycle"
         )
     }
 
@@ -150,6 +157,12 @@ Copy-TreeIfAllowed `
     -Skipped $skipped
 
 Copy-TreeIfAllowed `
+    -SourceRoot (Join-Path $scriptRoot "adapters") `
+    -DestinationRoot (Join-Path $targetRootPath "adapters") `
+    -Copied $copied `
+    -Skipped $skipped
+
+Copy-TreeIfAllowed `
     -SourceRoot (Join-Path $scriptRoot "github") `
     -DestinationRoot (Join-Path $targetRootPath ".github") `
     -Copied $copied `
@@ -180,6 +193,7 @@ $summary = [ordered]@{
         "Edit tools/ai-sdlc/config/project-profile.yaml for the target repository.",
         "Edit tools/ai-sdlc/config/context_memory.yaml, integrations.yaml, token_budget.yaml, and execution_lanes.yaml.",
         "Run tools/ai-sdlc/scripts/doctor-ai-sdlc.ps1 to verify framework readiness.",
+        "Use tools/ai-sdlc/scripts/ai-sdlc.ps1 as the main CLI entrypoint.",
         "Read AGENTS.md and docs/SDLC/README.md before starting AI-assisted work.",
         "Run tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.ps1 to generate fresh SDLC evidence.",
         "Run tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.ps1 -OpenDashboard to view live role progress.",
