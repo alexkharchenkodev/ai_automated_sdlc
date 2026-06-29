@@ -135,6 +135,20 @@ tools/ai-sdlc/config/project-profile.yaml
 
 After installing and adjusting `project-profile.yaml`, run the pipeline for changed files.
 
+First, verify framework readiness:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\tools\ai-sdlc\scripts\doctor-ai-sdlc.ps1" -Pretty
+```
+
+On macOS/Linux:
+
+```sh
+sh "./tools/ai-sdlc/scripts/doctor-ai-sdlc.sh"
+```
+
+Doctor reports are written to `.sdlc/doctor/` and appear in the live dashboard after the next dashboard event.
+
 Windows:
 
 ```powershell

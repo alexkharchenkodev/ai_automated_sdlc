@@ -10,6 +10,7 @@ Start here:
 - `role_contracts.md` for BA, design, engineering, review, QA, and release outputs.
 - `definition_of_ready.md` and `definition_of_done.md` for work-item quality.
 - `automated_pipeline.md` for the portable local automation flow.
+- `framework_doctor.md` for install/config readiness checks.
 - `execution_lanes.md` for fast/standard/strict lanes and CI compliance verdicts.
 - `live_dashboard.md` for role visualization and event logs.
 - `safe_change_policy.md` for blockers, approval records, rollback plans, and safety evidence.

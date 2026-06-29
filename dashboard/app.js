@@ -25,6 +25,7 @@
       state,
       events: window.AI_SDLC_EVENTS || [],
       safety: window.AI_SDLC_SAFETY || null,
+      doctor: window.AI_SDLC_DOCTOR || null,
       lane: window.AI_SDLC_LANE || null,
       compliance: window.AI_SDLC_COMPLIANCE || null,
       contextMemory: window.AI_SDLC_CONTEXT_MEMORY || null,
@@ -88,7 +89,7 @@
   };
 
   const renderConfigModal = () => {
-    const { state, profile, contextMemory, integrations, tokenUsage, config } = getData();
+    const { state, profile, doctor, contextMemory, integrations, tokenUsage, config } = getData();
     if (!config || !Array.isArray(config.files)) {
       byId("configModalBody").innerHTML = `<p class="muted">No dashboard configuration snapshot is available yet.</p>`;
       return;
@@ -105,6 +106,11 @@
         decision: contextMemory.decision,
         enabledProviders: contextMemory.enabledProviders,
         availableSources: contextMemory.availableSources
+      } : "not generated",
+      doctor: doctor ? {
+        decision: doctor.decision,
+        blockers: Array.isArray(doctor.blockers) ? doctor.blockers.length : 0,
+        warnings: Array.isArray(doctor.warnings) ? doctor.warnings.length : 0
       } : "not generated",
       integrations: integrations ? {
         decision: integrations.decision,
@@ -151,6 +157,7 @@
       state,
       events,
       safety,
+      doctor,
       lane,
       compliance,
       contextMemory,
@@ -164,18 +171,35 @@
     byId("activeRole").textContent = text(state.activeRole);
     byId("projectName").textContent = text(profile.projectName || profile.name || state.projectName || "Unknown");
     byId("updatedAt").textContent = text(state.updatedAtUtc);
+    byId("doctorDecision").textContent = text((doctor && doctor.decision), "unknown");
     byId("laneName").textContent = text((lane && lane.lane) || (summary && summary.lane));
     byId("complianceDecision").textContent = text((compliance && compliance.decision) || (summary && summary.complianceDecision), "review");
     byId("decisionBadge").textContent = text(state.decision, "review");
     byId("decisionBadge").className = `badge status-${text(state.decision, "review")}`;
 
-    const configReportsLoaded = [lane, compliance, tokenUsage, contextMemory, integrations].filter(Boolean).length;
-    byId("frameworkStatus").textContent = `${configReportsLoaded}/5 reports loaded`;
+    const configReportsLoaded = [doctor, lane, compliance, tokenUsage, contextMemory, integrations].filter(Boolean).length;
+    byId("frameworkStatus").textContent = `${configReportsLoaded}/6 reports loaded`;
 
     byId("memoryStatus").textContent = contextMemory
       ? `${contextMemory.enabledProviders || 0} providers enabled`
       : "No context report loaded";
     renderMemoryTab(contextMemory, currentMemoryTab);
+
+    if (doctor) {
+      byId("doctorPanelDecision").innerHTML = badge(doctor.decision || "review_required");
+      const blockers = Array.isArray(doctor.blockers) ? doctor.blockers : [];
+      const warnings = Array.isArray(doctor.warnings) ? doctor.warnings : [];
+      byId("doctorPanel").innerHTML = `
+        ${metric("Passed", doctor.passed)}
+        ${metric("Blockers", blockers.length)}
+        ${metric("Warnings", warnings.length)}
+        <ul class="safety-list">
+          ${blockers.slice(0, 4).map((item) => `<li>${escapeHtml(item.code || item.message || item)}</li>`).join("") || warnings.slice(0, 4).map((item) => `<li>${escapeHtml(item.code || item.message || item)}</li>`).join("") || "<li class=\"muted\">Framework install looks ready</li>"}
+        </ul>
+      `;
+    } else {
+      byId("doctorPanel").innerHTML = `<p class="muted">Run <code>tools/ai-sdlc/scripts/doctor-ai-sdlc.ps1</code> to verify framework readiness.</p>`;
+    }
 
     if (lane) {
       byId("laneDecision").innerHTML = badge(lane.decision || "selected");
@@ -230,10 +254,8 @@
           ${providers.map((provider) => `<li>${escapeHtml(provider.name)}: ${escapeHtml(provider.enabled ? "on" : "off")} / ${escapeHtml(provider.mode || "-")}</li>`).join("") || "<li class=\"muted\">No providers configured</li>"}
         </ul>
       `;
-      byId("contextDetailPanel").innerHTML = byId("contextPanel").innerHTML;
     } else {
       byId("contextPanel").innerHTML = `<p class="muted">No context memory report has been generated yet.</p>`;
-      byId("contextDetailPanel").innerHTML = `<p class="muted">No context memory report has been generated yet.</p>`;
     }
 
     if (integrations) {

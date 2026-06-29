@@ -31,6 +31,8 @@ $required = @(
     "tools/ai-sdlc/scripts/validate-safe-change.ps1",
     "tools/ai-sdlc/scripts/verify-sdlc-compliance.ps1",
     "tools/ai-sdlc/scripts/verify-sdlc-compliance.sh",
+    "tools/ai-sdlc/scripts/doctor-ai-sdlc.ps1",
+    "tools/ai-sdlc/scripts/doctor-ai-sdlc.sh",
     "tools/ai-sdlc/scripts/write-rollback-plan.ps1",
     "tools/ai-sdlc/scripts/select-impacted-tests.ps1",
     "tools/ai-sdlc/scripts/write-approval-record.ps1",

@@ -174,6 +174,7 @@ cat <<EOF
   "nextSteps": [
     "Edit tools/ai-sdlc/config/project-profile.yaml for the target repository.",
     "Edit tools/ai-sdlc/config/context_memory.yaml, integrations.yaml, token_budget.yaml, and execution_lanes.yaml.",
+    "Run tools/ai-sdlc/scripts/doctor-ai-sdlc.sh to verify framework readiness.",
     "Read AGENTS.md and docs/SDLC/README.md before starting AI-assisted work.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.sh to generate fresh SDLC evidence on macOS/Linux.",
     "Run tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.sh --open-dashboard to view live role progress.",

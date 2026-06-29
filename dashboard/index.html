@@ -45,6 +45,10 @@
         <span class="label">Compliance</span>
         <strong id="complianceDecision">-</strong>
       </article>
+      <article class="summary-card">
+        <span class="label">Doctor</span>
+        <strong id="doctorDecision">-</strong>
+      </article>
     </section>
 
     <section>
@@ -53,6 +57,13 @@
         <span id="frameworkStatus" class="muted">Loading</span>
       </div>
       <div class="four-column">
+        <div>
+          <div class="section-title compact">
+            <h3>Doctor</h3>
+            <span id="doctorPanelDecision" class="muted">No report</span>
+          </div>
+          <div id="doctorPanel" class="panel"></div>
+        </div>
         <div>
           <div class="section-title compact">
             <h3>Execution Lane</h3>
@@ -74,6 +85,8 @@
           </div>
           <div id="tokenPanel" class="panel"></div>
         </div>
+      </div>
+      <div class="two-column secondary-config">
         <div>
           <div class="section-title compact">
             <h3>Context Memory</h3>
@@ -81,21 +94,12 @@
           </div>
           <div id="contextPanel" class="panel"></div>
         </div>
-      </div>
-      <div class="two-column secondary-config">
         <div>
           <div class="section-title compact">
             <h3>Integrations</h3>
             <span id="integrationsDecision" class="muted">No report</span>
           </div>
           <div id="integrationsPanel" class="panel"></div>
-        </div>
-        <div>
-          <div class="section-title compact">
-            <h3>Context Memory Detail</h3>
-            <span class="muted">Provider readiness</span>
-          </div>
-          <div id="contextDetailPanel" class="panel"></div>
         </div>
       </div>
     </section>

@@ -43,6 +43,11 @@ jobs:
           fi
           cat changed-files.txt
 
+      - name: Run AI SDLC doctor
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -ExecutionPolicy Bypass -File tools/ai-sdlc/scripts/doctor-ai-sdlc.ps1 -Pretty
+
       - name: Run AI SDLC pipeline
         shell: pwsh
         run: |

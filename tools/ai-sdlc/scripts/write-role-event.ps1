@@ -252,6 +252,7 @@ $state | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $statePath
 
 $reportRoot = Join-Path $rootPath ".sdlc/local-pipeline"
 $summaryPath = Join-Path $reportRoot "sdlc-summary.json"
+$doctorPath = Join-Path $rootPath ".sdlc/doctor/sdlc-doctor-report.json"
 $lanePath = Join-Path $reportRoot "sdlc-lane-report.json"
 $safeChangePath = Join-Path $reportRoot "sdlc-safe-change-report.json"
 $compliancePath = Join-Path $reportRoot "sdlc-compliance-report.json"
@@ -259,6 +260,7 @@ $contextPath = Join-Path $reportRoot "sdlc-context-memory-report.json"
 $integrationsPath = Join-Path $reportRoot "sdlc-integrations-report.json"
 $tokenPath = Join-Path $reportRoot "sdlc-token-usage-report.json"
 $summary = if (Test-Path -LiteralPath $summaryPath) { Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json } else { $null }
+$doctor = if (Test-Path -LiteralPath $doctorPath) { Get-Content -LiteralPath $doctorPath -Raw | ConvertFrom-Json } else { $null }
 $lane = if (Test-Path -LiteralPath $lanePath) { Get-Content -LiteralPath $lanePath -Raw | ConvertFrom-Json } else { $null }
 $safeChange = if (Test-Path -LiteralPath $safeChangePath) { Get-Content -LiteralPath $safeChangePath -Raw | ConvertFrom-Json } else { $null }
 $compliance = if (Test-Path -LiteralPath $compliancePath) { Get-Content -LiteralPath $compliancePath -Raw | ConvertFrom-Json } else { $null }
@@ -284,6 +286,7 @@ $runtimeLines = [System.Collections.Generic.List[string]]::new()
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_STATE" -Value $state))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_EVENTS" -Value @($events)))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_SUMMARY" -Value $summary))
+$runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_DOCTOR" -Value $doctor))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_LANE" -Value $lane))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_SAFETY" -Value $safeChange))
 $runtimeLines.Add((ConvertTo-JsAssignment -GlobalName "AI_SDLC_COMPLIANCE" -Value $compliance))
