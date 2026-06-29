@@ -1,0 +1,15 @@
+id:
+title:
+type: feature # feature | bug | docs | refactor | test | release | tooling
+area:
+primary_target:
+summary:
+acceptance_criteria:
+  - 
+non_goals:
+  - 
+constraints:
+  - 
+validation_expected:
+  - 
+human_approval_required: false

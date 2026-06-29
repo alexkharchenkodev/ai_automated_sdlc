@@ -1,0 +1,70 @@
+project_name: IOSSwiftProject
+profile_name: ios-swift
+primary_stack: iOS Swift
+project_root: .
+
+source_roots:
+  application:
+    - Sources
+    - App
+  tests:
+    - Tests
+  docs:
+    - docs
+
+architecture_areas:
+  app:
+    paths:
+      - Sources
+      - App
+    rules:
+      - Follow existing SwiftUI/UIKit architecture.
+      - Keep domain/business logic testable outside view code where practical.
+  tests:
+    paths:
+      - Tests
+    rules:
+      - Prefer deterministic unit tests for model and state logic.
+
+build_commands:
+  - xcodebuild build -scheme "<SCHEME>" -destination "platform=iOS Simulator,name=iPhone 15"
+
+test_commands:
+  - xcodebuild test -scheme "<SCHEME>" -destination "platform=iOS Simulator,name=iPhone 15"
+
+lint_commands: []
+
+content_or_schema:
+  enabled: false
+  roots: []
+  rules: []
+
+design:
+  tool: figma_optional
+  evidence_required_for_user_facing_changes: true
+
+tracker:
+  provider: optional
+
+ci:
+  provider: optional
+
+naming:
+  public_api: Swift_API_Design_Guidelines
+  private_members: match_existing_swift_style
+  tests: TypeNameTests_or_FeatureTests
+  ids: match_existing_schema
+
+protected_surfaces:
+  - secrets and credentials
+  - generated artifacts from other projects
+  - unrelated user changes
+  - signing profiles and provisioning unless explicitly requested
+
+human_gates:
+  destructive_change: required
+  security_sensitive_change: required
+  schema_or_api_contract_change: required
+  release_decision: required
+  paid_or_external_service_mutation: required
+  ambiguous_product_or_design_direction: required

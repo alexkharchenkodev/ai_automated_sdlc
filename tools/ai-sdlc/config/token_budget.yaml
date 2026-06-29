@@ -1,0 +1,11 @@
+schema_version: 1
+
+# Estimates are intentionally approximate and offline. They help the operator
+# notice large prompts/context sets before cost and quality drift upward.
+settings:
+  chars_per_token: 4
+  warning_tokens: 32000
+  review_required_tokens: 96000
+  blocked_tokens: 192000
+  include_changed_file_content: true
+  include_generated_reports: true

@@ -1,0 +1,67 @@
+name: AI SDLC
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      skip_validation:
+        description: "Generate SDLC evidence without executing project validation commands"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  ai-sdlc:
+    name: AI SDLC Evidence
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build changed file list
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD" > changed-files.txt
+          elif git rev-parse HEAD~1 >/dev/null 2>&1; then
+            git diff --name-only HEAD~1 HEAD > changed-files.txt
+          else
+            git ls-files > changed-files.txt
+          fi
+          cat changed-files.txt
+
+      - name: Run AI SDLC pipeline
+        shell: pwsh
+        run: |
+          $skip = "${{ github.event.inputs.skip_validation }}"
+          if ([string]::IsNullOrWhiteSpace($skip)) {
+            $skip = "true"
+          }
+          $pipelineArgs = @(
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", "tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.ps1",
+            "-ChangedFilesPath", "changed-files.txt",
+            "-ReportDirectory", ".sdlc/local-pipeline",
+            "-Pretty"
+          )
+          if ($skip -eq "true") {
+            $pipelineArgs += "-SkipValidationExecution"
+          }
+          & pwsh @pipelineArgs
+
+      - name: Upload AI SDLC evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-sdlc-evidence
+          path: .sdlc/local-pipeline

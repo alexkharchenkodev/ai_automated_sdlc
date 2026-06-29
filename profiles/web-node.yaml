@@ -1,0 +1,84 @@
+project_name: WebNodeProject
+profile_name: web-node
+primary_stack: Web Node
+project_root: .
+
+source_roots:
+  application:
+    - src
+    - app
+    - pages
+    - components
+  tests:
+    - tests
+    - __tests__
+  docs:
+    - docs
+
+architecture_areas:
+  ui:
+    paths:
+      - src
+      - app
+      - pages
+      - components
+    rules:
+      - Reuse existing components and design tokens before creating new UI primitives.
+      - Keep data fetching, state, and presentational concerns aligned with existing framework patterns.
+  api:
+    paths:
+      - api
+      - src/api
+      - app/api
+    rules:
+      - Treat route and payload changes as API contract changes.
+  tests:
+    paths:
+      - tests
+      - __tests__
+    rules:
+      - Add focused tests for changed behavior.
+
+build_commands:
+  - npm run build
+
+test_commands:
+  - npm test
+
+lint_commands:
+  - npm run lint
+
+content_or_schema:
+  enabled: false
+  roots: []
+  rules: []
+
+design:
+  tool: figma_optional
+  evidence_required_for_user_facing_changes: true
+
+tracker:
+  provider: optional
+
+ci:
+  provider: github_actions_optional
+
+naming:
+  public_api: match_existing_typescript_style
+  private_members: match_existing_typescript_style
+  tests: ComponentName_test_or_feature_spec
+  ids: kebab_case_or_snake_case_per_project
+
+protected_surfaces:
+  - secrets and credentials
+  - generated artifacts from other projects
+  - unrelated user changes
+  - lockfiles unless dependency changes are intentional
+
+human_gates:
+  destructive_change: required
+  security_sensitive_change: required
+  schema_or_api_contract_change: required
+  release_decision: required
+  paid_or_external_service_mutation: required
+  ambiguous_product_or_design_direction: required

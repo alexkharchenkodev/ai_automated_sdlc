@@ -1,0 +1,30 @@
+required_reports:
+  - sdlc-impact-report.json
+  - sdlc-task-intake-report.json
+  - sdlc-validation-plan.json
+  - sdlc-selected-validation-report.json
+  - sdlc-rollback-plan.json
+
+approval_required_for:
+  - security_sensitive_change
+  - schema_or_api_contract_change
+  - high_risk_change
+  - destructive_change
+  - release_decision
+
+guarded_path_patterns:
+  - (^|/)\.env$
+  - secret
+  - credential
+  - token
+  - \.pem$
+  - \.p12$
+  - (^|/)\.github/workflows/
+  - migration
+  - schema
+  - contract
+  - openapi
+  - swagger
+
+rollback_required_min_risk: 3
+validation_required: true

@@ -1,0 +1,22 @@
+gates:
+  explicit_target_precedence:
+    trigger: user names folder, tool, page, file, module, or screen
+    behavior: named surface is primary target
+  pre_implementation_discovery:
+    trigger: non-trivial feature, UI, generator, workflow, schema, API, infra, or SDLC tooling change
+    behavior: produce brief before edits
+  approval_after_confirmation:
+    trigger: high-risk work or user asks to discuss/check first
+    behavior: wait for explicit implementation command
+  existing_capability_reuse:
+    trigger: medium or high complexity
+    behavior: scan and list reusable project capabilities before inventing new code
+  uncertainty:
+    trigger: unclear model, target, or approach
+    behavior: state uncertainty and resolve before proceeding
+  human_approval:
+    trigger: profile human_gates match
+    behavior: stop until approval or waiver is explicit
+  evidence:
+    trigger: completed task
+    behavior: report changed files, validation, residual risk, and approvals

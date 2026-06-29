@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI SDLC Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>AI SDLC Dashboard</h1>
+      <p class="subtitle">Live role flow, safety gates, validation, and evidence state.</p>
+    </div>
+    <div class="top-actions">
+      <button id="configButton" class="icon-button" type="button">Config</button>
+      <span id="decisionBadge" class="badge">loading</span>
+      <span class="muted">Auto-refresh: 3s</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="label">Run</span>
+        <strong id="runId">-</strong>
+      </article>
+      <article class="summary-card">
+        <span class="label">Active Role</span>
+        <strong id="activeRole">-</strong>
+      </article>
+      <article class="summary-card">
+        <span class="label">Project</span>
+        <strong id="projectName">-</strong>
+      </article>
+      <article class="summary-card">
+        <span class="label">Updated</span>
+        <strong id="updatedAt">-</strong>
+      </article>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Framework Config</h2>
+        <span id="frameworkStatus" class="muted">Loading</span>
+      </div>
+      <div class="three-column">
+        <div>
+          <div class="section-title compact">
+            <h3>Token Budget</h3>
+            <span id="tokenDecision" class="muted">No report</span>
+          </div>
+          <div id="tokenPanel" class="panel"></div>
+        </div>
+        <div>
+          <div class="section-title compact">
+            <h3>Context Memory</h3>
+            <span id="contextDecision" class="muted">No report</span>
+          </div>
+          <div id="contextPanel" class="panel"></div>
+        </div>
+        <div>
+          <div class="section-title compact">
+            <h3>Integrations</h3>
+            <span id="integrationsDecision" class="muted">No report</span>
+          </div>
+          <div id="integrationsPanel" class="panel"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Project Memory</h2>
+        <span id="memoryStatus" class="muted">Loading</span>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Project memory providers">
+        <button class="tab-button active" type="button" data-memory-tab="adr">ADR</button>
+        <button class="tab-button" type="button" data-memory-tab="rag">RAG</button>
+        <button class="tab-button" type="button" data-memory-tab="graph_rag">GraphRAG</button>
+        <button class="tab-button" type="button" data-memory-tab="code_search">Code Search</button>
+      </div>
+      <div id="memoryPanel" class="panel memory-panel"></div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Roles</h2>
+        <span id="roleCount" class="muted">0 roles</span>
+      </div>
+      <div id="roles" class="role-grid"></div>
+    </section>
+
+    <section class="two-column">
+      <div>
+        <div class="section-title">
+          <h2>Safety</h2>
+          <span id="safetyDecision" class="muted">No safety report loaded</span>
+        </div>
+        <div id="safetyPanel" class="panel"></div>
+      </div>
+      <div>
+        <div class="section-title">
+          <h2>Artifacts</h2>
+          <span id="artifactCount" class="muted">0 artifacts</span>
+        </div>
+        <div id="artifactPanel" class="panel"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Events</h2>
+        <span id="eventCount" class="muted">0 events</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time UTC</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Artifacts</th>
+            </tr>
+          </thead>
+          <tbody id="events"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="configModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="configModalTitle">Project Configuration</h2>
+          <p class="subtitle">Active AI SDLC profile, context, integration, token, role, and safety settings.</p>
+        </div>
+        <button id="configCloseButton" class="icon-button" type="button">Close</button>
+      </div>
+      <div id="configModalBody" class="config-modal-body"></div>
+    </section>
+  </div>
+
+  <script src="runtime-state.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

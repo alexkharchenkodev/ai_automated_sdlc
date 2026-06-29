@@ -1,0 +1,7 @@
+.sdlc/
+sdlc-*.json
+sdlc-*.md
+sdlc-artifacts/
+changed-files.txt
+runtime-state.js
+*.log

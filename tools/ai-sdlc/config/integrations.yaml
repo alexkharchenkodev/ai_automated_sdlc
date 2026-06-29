@@ -1,0 +1,36 @@
+schema_version: 1
+
+# Integration checks are offline by default. They report readiness and missing
+# configuration without contacting external services or printing secrets.
+integrations:
+  jira:
+    enabled: false
+    provider: jira
+    mode: mcp
+    mcp_server: jira
+    mcp_config_path: .mcp/config.json
+    required_env:
+      - JIRA_SITE_URL
+      - JIRA_PROJECT_KEY
+      - JIRA_EMAIL
+      - JIRA_API_TOKEN
+    ticket_key_pattern: "[A-Z][A-Z0-9]+-[0-9]+"
+    sync_direction: read_only
+  github:
+    enabled: false
+    provider: github
+    mode: mcp
+    mcp_server: github
+    mcp_config_path: .mcp/config.json
+    required_env:
+      - GITHUB_TOKEN
+    sync_direction: read_only
+  linear:
+    enabled: false
+    provider: linear
+    mode: mcp
+    mcp_server: linear
+    mcp_config_path: .mcp/config.json
+    required_env:
+      - LINEAR_API_KEY
+    sync_direction: read_only

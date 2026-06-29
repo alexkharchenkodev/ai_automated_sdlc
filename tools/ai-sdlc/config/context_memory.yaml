@@ -1,0 +1,40 @@
+schema_version: 1
+
+# Providers can be enabled independently per project. This config only declares
+# expected context sources; scripts generate a report but do not build indexes.
+providers:
+  adr:
+    enabled: true
+    mode: local_files
+    paths:
+      - docs/ADR
+      - docs/adr
+      - docs/architecture
+  rag:
+    enabled: true
+    mode: local_files
+    paths:
+      - docs
+      - README.md
+      - AGENTS.md
+  graph_rag:
+    enabled: false
+    mode: local_graph
+    paths:
+      - .sdlc/graph
+      - docs/architecture
+  code_search:
+    enabled: true
+    mode: repository
+    paths:
+      - .
+  issue_tracker:
+    enabled: false
+    mode: integration
+    paths:
+      - jira
+
+settings:
+  require_context_report: true
+  require_reuse_evidence_for_medium_risk: true
+  max_context_files_hint: 24

@@ -1,0 +1,78 @@
+project_name: ExampleProject
+profile_name: generic
+primary_stack: generic
+project_root: .
+
+source_roots:
+  application:
+    - src
+  tests:
+    - tests
+  docs:
+    - docs
+
+architecture_areas:
+  core:
+    paths:
+      - src
+    rules:
+      - Keep business/domain logic deterministic where practical.
+      - Keep IO, UI, framework, and infrastructure concerns separated from pure logic.
+  tests:
+    paths:
+      - tests
+    rules:
+      - Prefer focused tests for changed behavior.
+
+build_commands:
+  - echo "Configure build_commands in tools/ai-sdlc/config/project-profile.yaml"
+
+test_commands:
+  - echo "Configure test_commands in tools/ai-sdlc/config/project-profile.yaml"
+
+lint_commands: []
+
+content_or_schema:
+  enabled: false
+  roots: []
+  rules: []
+
+design:
+  tool: optional
+  evidence_required_for_user_facing_changes: true
+
+tracker:
+  provider: optional
+
+ci:
+  provider: optional
+
+naming:
+  public_api: match_existing_codebase
+  private_members: match_existing_codebase
+  tests: behavior_or_subject_named
+  ids: match_existing_schema
+
+protected_surfaces:
+  - secrets and credentials
+  - generated artifacts from other projects
+  - unrelated user changes
+
+human_gates:
+  destructive_change: required
+  security_sensitive_change: required
+  schema_or_api_contract_change: required
+  release_decision: required
+  paid_or_external_service_mutation: required
+  ambiguous_product_or_design_direction: required
+
+validation_policy:
+  low_complexity:
+    - run focused relevant validation
+  medium_complexity:
+    - run build command when configured
+    - run focused tests when configured
+  high_complexity:
+    - run build command
+    - run focused tests
+    - run broader regression or manual QA when relevant

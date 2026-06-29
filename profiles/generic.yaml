@@ -1,0 +1,67 @@
+project_name: GenericProject
+profile_name: generic
+primary_stack: generic
+project_root: .
+
+source_roots:
+  application:
+    - src
+  tests:
+    - tests
+  docs:
+    - docs
+
+architecture_areas:
+  application:
+    paths:
+      - src
+    rules:
+      - Preserve existing architecture boundaries.
+      - Keep pure logic separate from IO and framework adapters where practical.
+  tests:
+    paths:
+      - tests
+    rules:
+      - Prefer focused deterministic tests.
+
+build_commands:
+  - echo "No build command configured"
+
+test_commands:
+  - echo "No test command configured"
+
+lint_commands: []
+
+content_or_schema:
+  enabled: false
+  roots: []
+  rules: []
+
+design:
+  tool: optional
+  evidence_required_for_user_facing_changes: true
+
+tracker:
+  provider: optional
+
+ci:
+  provider: optional
+
+naming:
+  public_api: match_existing_codebase
+  private_members: match_existing_codebase
+  tests: behavior_or_subject_named
+  ids: match_existing_schema
+
+protected_surfaces:
+  - secrets and credentials
+  - generated artifacts from other projects
+  - unrelated user changes
+
+human_gates:
+  destructive_change: required
+  security_sensitive_change: required
+  schema_or_api_contract_change: required
+  release_decision: required
+  paid_or_external_service_mutation: required
+  ambiguous_product_or_design_direction: required

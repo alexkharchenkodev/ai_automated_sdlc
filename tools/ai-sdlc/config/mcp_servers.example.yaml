@@ -1,0 +1,19 @@
+schema_version: 1
+
+# Copy into your AI client's MCP configuration format if needed. Different
+# clients use different schemas, so this file is documentation, not executable
+# configuration for the portable scripts.
+servers:
+  jira:
+    transport: stdio
+    command: your-jira-mcp-server-command
+    required_env:
+      - JIRA_SITE_URL
+      - JIRA_PROJECT_KEY
+      - JIRA_EMAIL
+      - JIRA_API_TOKEN
+  github:
+    transport: stdio
+    command: your-github-mcp-server-command
+    required_env:
+      - GITHUB_TOKEN

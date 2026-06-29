@@ -1,0 +1,71 @@
+project_name: AndroidKotlinProject
+profile_name: android-kotlin
+primary_stack: Android Kotlin
+project_root: .
+
+source_roots:
+  application:
+    - app/src/main
+  tests:
+    - app/src/test
+    - app/src/androidTest
+  docs:
+    - docs
+
+architecture_areas:
+  app:
+    paths:
+      - app/src/main
+    rules:
+      - Follow existing Android architecture.
+      - Keep domain/use-case logic testable outside UI code where practical.
+  tests:
+    paths:
+      - app/src/test
+      - app/src/androidTest
+    rules:
+      - Prefer JVM unit tests for pure logic and instrumentation tests for platform behavior.
+
+build_commands:
+  - ./gradlew assembleDebug
+
+test_commands:
+  - ./gradlew test
+
+lint_commands:
+  - ./gradlew lint
+
+content_or_schema:
+  enabled: false
+  roots: []
+  rules: []
+
+design:
+  tool: figma_optional
+  evidence_required_for_user_facing_changes: true
+
+tracker:
+  provider: optional
+
+ci:
+  provider: optional
+
+naming:
+  public_api: Kotlin_style
+  private_members: match_existing_kotlin_style
+  tests: ClassUnderTestTest_or_FeatureTest
+  ids: match_existing_schema
+
+protected_surfaces:
+  - secrets and credentials
+  - generated artifacts from other projects
+  - unrelated user changes
+  - signing keys and release credentials unless explicitly requested
+
+human_gates:
+  destructive_change: required
+  security_sensitive_change: required
+  schema_or_api_contract_change: required
+  release_decision: required
+  paid_or_external_service_mutation: required
+  ambiguous_product_or_design_direction: required

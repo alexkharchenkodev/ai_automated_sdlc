@@ -1,0 +1,82 @@
+project_name: GodotCSharpProject
+profile_name: godot-csharp
+primary_stack: Godot C#
+project_root: .
+
+source_roots:
+  application:
+    - Scripts
+    - Scenes
+  tests:
+    - tests
+  content:
+    - Content
+  docs:
+    - docs
+
+architecture_areas:
+  domain:
+    paths:
+      - Scripts/Domain
+    rules:
+      - Domain logic should remain deterministic.
+      - Domain logic should not depend on Godot APIs.
+  runtime:
+    paths:
+      - Scripts/Runtime
+      - Scenes
+    rules:
+      - Runtime code may depend on engine APIs.
+      - Runtime should map domain state into UI-facing view data.
+  content:
+    paths:
+      - Content
+    rules:
+      - Content changes are schema-first.
+      - Content ids and file names should follow project schema conventions.
+
+build_commands:
+  - dotnet build "<PROJECT>.csproj"
+
+test_commands:
+  - dotnet test "tests/<TEST_PROJECT>.csproj"
+
+lint_commands: []
+
+content_or_schema:
+  enabled: true
+  roots:
+    - Content
+  rules:
+    - JSON ids should match the active project schema.
+    - File names should match id-driven content entries.
+
+design:
+  tool: figma_optional
+  evidence_required_for_user_facing_changes: true
+
+tracker:
+  provider: optional
+
+ci:
+  provider: github_actions_optional
+
+naming:
+  public_api: PascalCase
+  private_members: _camelCase
+  tests: ClassUnderTestTest_or_FeatureSpec
+  ids: snake_case_when_schema_driven
+
+protected_surfaces:
+  - secrets and credentials
+  - generated artifacts from other projects
+  - unrelated user changes
+  - engine import metadata unless intentionally changed
+
+human_gates:
+  destructive_change: required
+  security_sensitive_change: required
+  schema_or_api_contract_change: required
+  release_decision: required
+  paid_or_external_service_mutation: required
+  ambiguous_product_or_design_direction: required

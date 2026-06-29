@@ -1,0 +1,56 @@
+roles:
+  - id: intake
+    title: Intake
+    purpose: Normalize task, primary target, changed files, and expected output.
+    required_artifacts:
+      - sdlc-task-intake-report.json
+  - id: ba
+    title: BA
+    purpose: Clarify acceptance criteria, complexity, non-goals, and open questions.
+    required_artifacts:
+      - ba-brief.md
+  - id: architecture
+    title: Architecture
+    purpose: Check boundaries, protected surfaces, reuse candidates, and risk.
+    required_artifacts:
+      - architecture-brief.md
+  - id: memory_reuse
+    title: Memory / Reuse
+    purpose: Search local docs, code, and prior artifacts before inventing new implementation.
+    required_artifacts:
+      - reuse-scan.md
+  - id: design
+    title: Design / UX
+    purpose: Check user-facing behavior, states, accessibility, and visual evidence needs.
+    required_artifacts:
+      - design-notes.md
+  - id: engineering
+    title: Engineering
+    purpose: Implement scoped code changes using existing project patterns.
+    required_artifacts:
+      - implementation-summary.md
+  - id: code_review
+    title: Code Review
+    purpose: Review defects, regressions, boundaries, and missing tests.
+    required_artifacts:
+      - code-review-report.md
+  - id: test_planning
+    title: Test Planning
+    purpose: Select build, test, lint, manual QA, and evidence requirements.
+    required_artifacts:
+      - sdlc-validation-plan.json
+  - id: test_execution
+    title: Test Execution
+    purpose: Run selected validation commands or record why execution was skipped.
+    required_artifacts:
+      - sdlc-selected-validation-report.json
+  - id: evidence
+    title: Evidence Bundle
+    purpose: Gather reports, decisions, approvals, and residual risk.
+    required_artifacts:
+      - sdlc-evidence-bundle.json
+  - id: done
+    title: Done / Handoff
+    purpose: Summarize outcome, blockers, approvals, and next steps.
+    required_artifacts:
+      - sdlc-summary.json

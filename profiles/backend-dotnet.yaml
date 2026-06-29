@@ -1,0 +1,73 @@
+project_name: BackendDotnetProject
+profile_name: backend-dotnet
+primary_stack: Backend .NET
+project_root: .
+
+source_roots:
+  application:
+    - src
+  tests:
+    - tests
+  docs:
+    - docs
+
+architecture_areas:
+  domain:
+    paths:
+      - src
+    rules:
+      - Keep business/domain logic deterministic and testable where practical.
+      - Treat API contracts, database migrations, and auth flows as high-risk.
+  tests:
+    paths:
+      - tests
+    rules:
+      - Add unit tests for pure logic and integration tests for API/data access changes.
+
+build_commands:
+  - dotnet build
+
+test_commands:
+  - dotnet test
+
+lint_commands: []
+
+content_or_schema:
+  enabled: true
+  roots:
+    - schemas
+    - contracts
+  rules:
+    - Treat public request/response DTO changes as API contract changes.
+    - Treat database migrations as release-sensitive.
+
+design:
+  tool: not_required_by_default
+  evidence_required_for_user_facing_changes: false
+
+tracker:
+  provider: optional
+
+ci:
+  provider: github_actions_optional
+
+naming:
+  public_api: PascalCase
+  private_members: _camelCase
+  tests: ClassUnderTestTests_or_FeatureSpec
+  ids: match_existing_schema
+
+protected_surfaces:
+  - secrets and credentials
+  - generated artifacts from other projects
+  - unrelated user changes
+  - production configuration
+  - database migrations unless explicitly in scope
+
+human_gates:
+  destructive_change: required
+  security_sensitive_change: required
+  schema_or_api_contract_change: required
+  release_decision: required
+  paid_or_external_service_mutation: required
+  ambiguous_product_or_design_direction: required

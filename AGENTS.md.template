@@ -1,0 +1,105 @@
+# AI SDLC Project Instructions
+
+This repository uses the portable AI SDLC baseline installed under `docs/SDLC` and `tools/ai-sdlc`.
+
+## Project Profile
+
+Before non-trivial work, read:
+
+1. `tools/ai-sdlc/config/project-profile.yaml`
+2. `tools/ai-sdlc/config/context_memory.yaml`
+3. `tools/ai-sdlc/config/integrations.yaml`
+4. `tools/ai-sdlc/config/token_budget.yaml`
+5. `docs/LLM/llm_code_generation_do_dont.md`
+6. `docs/LLM/canonical_naming_rules.md`
+
+The project profile defines the active stack, source roots, build/test commands, architecture areas, protected surfaces, and project-specific gates.
+The context, integration, and token configs define which memory sources, MCP-backed tools, and context-size budgets are active for the target project.
+
+## Universal SDLC Rules
+
+- Honor the user's explicit target first.
+- For non-trivial work, produce a short discovery brief before editing files.
+- The discovery brief is not implementation approval when the task is high-risk or the user asks to discuss/check first.
+- Only clear implementation commands such as `do it`, `continue`, or `implement` count as approval after a confirmation gate.
+- State uncertainty early when the task model or solution path is unclear.
+- Reuse existing project capabilities before inventing new systems.
+- Check enabled context providers before proposing new architecture or duplicate functionality.
+- Keep changes scoped to the requested surface and protected surfaces listed in the profile.
+- Validate with the commands listed in the project profile.
+- Preserve unrelated user changes.
+
+## Required Brief For Non-Trivial Work
+
+The brief should cover:
+
+- primary target and context-only areas
+- task complexity and reasons
+- existing systems/data already available
+- domain or product model for the requested change
+- likely owner files/functions
+- reusable capabilities checked
+- non-goals and protected surfaces
+- acceptance criteria
+- verification evidence
+
+## Human Gates
+
+Stop for human approval when the profile or SDLC gates require it, especially for:
+
+- destructive changes
+- schema/data-contract changes
+- security-sensitive changes
+- release decisions
+- paid/external service actions
+- ambiguous product/design decisions
+
+## Evidence
+
+Completed work should report:
+
+- files changed
+- behavior or documentation changed
+- validation run
+- known residual risk
+- whether human approval was required
+
+## Automated Local Pipeline
+
+Use the local AI SDLC pipeline to create fresh evidence for changes:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\run-ai-sdlc-pipeline.ps1 -ChangedFile "<path>" -Task "<summary>" -Pretty
+```
+
+On macOS/Linux:
+
+```sh
+sh ./tools/ai-sdlc/scripts/run-ai-sdlc-pipeline.sh --changed-file "<path>" --task "<summary>"
+```
+
+The pipeline writes reports under `.sdlc/local-pipeline/`.
+
+Safety gates are part of the pipeline. If `sdlc-safe-change-report.json` blocks, do not continue as if the task is done. Add a scoped approval record only when the user explicitly approves the risky scope.
+
+## Live Role Dashboard
+
+For visible role progress, start the dashboard or run the orchestrator:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\start-ai-sdlc-dashboard.ps1 -Pretty
+powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\run-ai-sdlc-orchestrator.ps1 -ChangedFile "<path>" -Task "<summary>" -OpenDashboard -Pretty
+```
+
+On macOS/Linux:
+
+```sh
+sh ./tools/ai-sdlc/scripts/start-ai-sdlc-dashboard.sh
+sh ./tools/ai-sdlc/scripts/run-ai-sdlc-orchestrator.sh --changed-file "<path>" --task "<summary>" --open-dashboard
+```
+
+Agents should emit role events during real implementation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ai-sdlc\scripts\write-role-event.ps1 -Role engineering -Status running -Message "Editing scoped files" -Pretty
+```
